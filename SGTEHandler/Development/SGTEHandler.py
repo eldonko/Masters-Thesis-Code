@@ -7,7 +7,7 @@ import math
 
 
 class SGTEHandler(object):
-    def __init__(self):
+    def __init__(self, element=None):
         super(SGTEHandler, self).__init__()
         self.data = None
         self.colors = ['royalblue', 'seagreen', 'slategrey', 'red', 'pink', 'orange', 'mintcream', 'lime', 'yellow']
@@ -23,22 +23,42 @@ class SGTEHandler(object):
         self.equation_result_data = None
         self.selected_phases = []
 
-        self.set_element()
+        self.set_element(element)
 
-    def set_element(self):
-        while not self.element in self.elements:
+    def set_element(self, element=None):
+        """
+        Allows either user input for element or sets the element to the provided input of element is not None
+        :param element: (optional) element for which the equations shall be evaluated
+        :return:
+        """
+
+        if element is not None and element in self.elements:
+            self.element = element
+
+        while self.element not in self.elements:
             self.element = input('Please enter element name: ').capitalize()
 
         print(self.element + ' successfully selected!\n')
 
-        inp_file = os.path.join(r"C:\Users\danie\Documents\Montanuni\Masterarbeit\4 Daten\SGTE Data", self.element + '.xlsx')
+        inp_file = os.path.join(r"C:\Users\danie\Documents\Montanuni\Masterarbeit\4_Daten\SGTE Data", self.element + '.xlsx')
         self.load_data(inp_file)
 
-    def set_phases(self):
+    def set_phases(self, phases=None):
         """
-        Prompts the user to specify the phases he would like to evaluate
+        Prompts the user to specify the phases he would like to evaluate or sets the phases to the phases specified
         :return:
         """
+        # Get all the unique phases in self.data
+        possible_phases = self.data['Phase'].unique()
+
+        if phases is not None:
+            # TODO: Add error handling
+            if phases == ['all']:
+                self.selected_phases = possible_phases
+            else:
+                self.selected_phases = phases
+            return
+
         if len(self.selected_phases) > 0:
             print('To reuse phases from before, enter y. To reset phases, enter n.')
             keep = ''
@@ -48,8 +68,6 @@ class SGTEHandler(object):
                 if keep == 'y':
                     return
 
-        # Get all the unique phases in self.data
-        possible_phases = self.data['Phase'].unique()
         print('Please select the phases you want to evaluate!')
         print('Possible phases: ')
         for phase in possible_phases:
@@ -79,20 +97,23 @@ class SGTEHandler(object):
         print()
         self.selected_phases = selected_phases
 
-    def evaluate_equations(self, start_temp, end_temp, p, gibbs=True, entropy=False, enthalpy=False, heat_capacity=False):
+    def evaluate_equations(self, start_temp, end_temp, p, gibbs=True, entropy=False, enthalpy=False, heat_capacity=False
+                           , plot=True, phases=None):
         """
         Evaluates the Gibbs energy for a temperature range and selected phase at a certain pressure.
         :param start_temp: lower bound of the temperature interval
         :param end_temp: upper bound of the temperature interval
         :param p: pressure
-        :param gibbs: if True, Gibbs energy is evaluated
-        :param entropy: if True, entropy is evaluated
-        :param enthalpy: if True, enthalpy is evaluated
-        :param heat_capacity: if True, heat capacity is evaluated
+        :param gibbs: (optional) if True, Gibbs energy is evaluated
+        :param entropy: (optional) if True, entropy is evaluated
+        :param enthalpy: (optional) if True, enthalpy is evaluated
+        :param heat_capacity: (optional) if True, heat capacity is evaluated
+        :param plot: (optional) Determines if data shall be plotted
+        :param phases: (optional) phases to be evaluated can be selected
         :return:
         """
 
-        self.set_phases()
+        self.set_phases(phases)
 
         temp_range = np.arange(start_temp, end_temp, dtype=np.float32)
         ax_gibbs = None
@@ -104,14 +125,15 @@ class SGTEHandler(object):
             # Get the Gibbs energies for the temperature range
             equation_result = self.solve_equations(phase, p, temp_range, gibbs, entropy, enthalpy, heat_capacity)
             # Plot the obtained data
-            if gibbs:
-                ax_gibbs = self.plot_data(equation_result, ax_gibbs, 'G(J)_', phase, i)
-            if entropy:
-                ax_entropy = self.plot_data(equation_result, ax_entropy, 'S(J/K)_', phase, i)
-            if enthalpy:
-                ax_enthalpy = self.plot_data(equation_result, ax_enthalpy, 'H(J)_', phase, i)
-            if heat_capacity:
-                ax_heat_capacity = self.plot_data(equation_result, ax_heat_capacity, 'Cp(J/K)_', phase, i)
+            if plot:
+                if gibbs:
+                    ax_gibbs = self.plot_data(equation_result, ax_gibbs, 'G(J)_', phase, i)
+                if entropy:
+                    ax_entropy = self.plot_data(equation_result, ax_entropy, 'S(J/K)_', phase, i)
+                if enthalpy:
+                    ax_enthalpy = self.plot_data(equation_result, ax_enthalpy, 'H(J)_', phase, i)
+                if heat_capacity:
+                    ax_heat_capacity = self.plot_data(equation_result, ax_heat_capacity, 'Cp(J/K)_', phase, i)
 
             # Save the obtained data to the SGTEHandler
             if self.equation_result_data is None:
@@ -119,10 +141,15 @@ class SGTEHandler(object):
             else:
                 self.equation_result_data = self.equation_result_data.merge(equation_result, on='Temperature')
 
-        if gibbs:
-            ax_gibbs.legend()
-        if entropy:
-            ax_entropy.legend()
+        if plot:
+            if gibbs:
+                ax_gibbs.legend()
+            if entropy:
+                ax_entropy.legend()
+            if enthalpy:
+                ax_enthalpy.legend()
+            if heat_capacity:
+                ax_heat_capacity.legend()
 
     def plot_data(self, equation_result, ax, prefix, phase, i):
         """
