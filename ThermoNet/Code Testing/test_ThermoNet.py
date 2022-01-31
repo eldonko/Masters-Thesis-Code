@@ -13,12 +13,10 @@ def main():
 	gibbs_data = sgte_handler.equation_result_data
 
 	data = np.array(gibbs_data['G(J)_BCC_A2'])
-	print(data)
+	temp = np.array(gibbs_data['Temperature'])
 
 	noise = np.random.normal(0, 1500, size=(len(data), ))
 	data = data + noise
-
-	print(data)
 
 	plt.scatter(gibbs_data['Temperature'], data, s=0.2)
 	plt.show()

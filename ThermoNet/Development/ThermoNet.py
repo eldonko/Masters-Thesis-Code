@@ -184,6 +184,8 @@ class ThermoNet(object):
         :return:
         """
 
+        loss = self.loss_func(output, g)
+
         x = cache
 
         # Gradient of loss w.r.t. output
