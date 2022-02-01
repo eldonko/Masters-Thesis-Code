@@ -157,7 +157,7 @@ class ChenSundman(nn.Module):
         :return: activation
         """
 
-        # Restrict self.theta_E to positive values as negative values can lead to numerical instability inside the log
+        # Restrict self.theta_E to negative values as positive values can lead to numerical instability inside the log
         if self.theta_E > 0:
             self.theta_E = Parameter(torch.tensor(0.0 - 1e-6))
 

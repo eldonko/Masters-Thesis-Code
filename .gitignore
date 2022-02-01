@@ -1,3 +1,4 @@
 .idea/
 __pychache__/
 venv/
+.ipynb_checkpoints/
