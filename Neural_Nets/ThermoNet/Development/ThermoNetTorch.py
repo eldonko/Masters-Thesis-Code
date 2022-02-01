@@ -33,15 +33,20 @@ class ThermoNet(nn.Module):
 
 
 class SubNet(nn.Module):
-    def __init__(self, activation, hidden_dim):
+    def __init__(self, activation, hidden_dim, initialize=True, init_func=nn.init.uniform_, init_args=None):
         super(SubNet, self).__init__()
 
         # NN layers
+        if init_args is None:
+            init_args = [-0.2, -0.1]
         self.layer_1 = Linear(1, hidden_dim)
         self.act_1 = activation
         self.layer_2 = Linear(hidden_dim, 1)
 
-        self._initialize_parameters()
+        if initialize:
+            if init_args is None:
+                init_args = [-0.2, -0.1]
+            self._initialize_parameters(init_func, init_args)
 
     def __call__(self, *temp):
         if len(temp) == 1:
@@ -49,12 +54,16 @@ class SubNet(nn.Module):
         elif len(temp) == 4:
             return self.gibbs(temp[0]), self.entropy(temp[1]), self.enthalpy(temp[2]), self.heat_capacity(temp[3])
 
-    def _initialize_parameters(self):
+    def _initialize_parameters(self, init_func, *args):
         # Initialize parameters
-        nn.init.uniform_(self.layer_1.weight, a=-0.2, b=-0.1)
-        nn.init.uniform_(self.layer_1.bias, a=-0.2, b=-0.1)
-        nn.init.uniform_(self.layer_2.weight, a=-0.2, b=-0.1)
-        nn.init.uniform_(self.layer_2.bias, a=-0.2, b=-0.1)
+        if init_func == nn.init.uniform_:
+            low = args[0]
+            high = args[1]
+
+            init_func(self.layer_1.weight, a=low, b=high)
+            init_func(self.layer_1.bias, a=low, b=high)
+            init_func(self.layer_2.weight, a=low, b=high)
+            init_func(self.layer_2.bias, a=low, b=high)
 
     def gibbs(self, xg):
         """
@@ -136,18 +145,11 @@ class ChenSundman(nn.Module):
         super(ChenSundman, self).__init__()
 
         # Initialize parameters
-        self.R = Parameter(torch.tensor(8.3145))
-        self.E0 = Parameter(torch.tensor(1.0))
-        self.theta_E = Parameter(torch.tensor(-1.0))
-        self.a = Parameter(torch.tensor(1.0))
-        self.b = Parameter(torch.tensor(1.0))
-
-        # Define require_grad
-        self.R.requires_grad = False
-        self.E0.requires_grad = True
-        self.theta_E.requires_grad = False
-        self.a.requires_grad = True
-        self.b.requires_grad = True
+        self.R = Parameter(torch.tensor(8.3145), requires_grad=False)
+        self.E0 = Parameter(torch.tensor(1.0), requires_grad=True)
+        self.theta_E = Parameter(torch.tensor(-1.0), requires_grad=False)
+        self.a = Parameter(torch.tensor(1.0), requires_grad=True)
+        self.b = Parameter(torch.tensor(1.0), requires_grad=True)
 
     def forward(self, s):
         """
