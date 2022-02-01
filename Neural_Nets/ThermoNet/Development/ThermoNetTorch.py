@@ -4,7 +4,7 @@ from torch.nn import Linear
 from torch.nn.parameter import Parameter
 from torch.utils.data import Dataset
 import numpy as np
-from SGTEHandler.Development.SGTEHandler import SGTEHandler
+from Data_Handling.SGTEHandler.Development.SGTEHandler import SGTEHandler
 
 
 # Neural network containing both subnetworks
