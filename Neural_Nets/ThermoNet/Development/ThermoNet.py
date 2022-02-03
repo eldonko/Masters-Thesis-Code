@@ -24,48 +24,42 @@ class ThermoRegressionNet(nn.Module):
 	phases based on the element data which it receives as input.
 	"""
 
-	def __init__(self, hidden_dim=16, act_func=Sigmoid()):
+	def __init__(self, hidden_layers=1, hidden_dim=16, act_func=Sigmoid()):
 		super(ThermoRegressionNet, self).__init__()
 
-		self.layer_1 = Linear(1, hidden_dim)
-		self.act_1 = act_func
-		self.layer_2 = Linear(hidden_dim, 1)
+		self.layers = nn.ModuleList()
 
-		# Initialize network
-		w_low = -1000
-		w_high = 1000
-		b_low = -10
-		b_high = 10
-		nn.init.uniform_(self.layer_1.weight, a=w_low, b=w_high)
-		nn.init.uniform_(self.layer_1.bias, a=b_low, b=b_high)
-		nn.init.uniform_(self.layer_2.weight, a=w_low, b=w_high)
-		nn.init.uniform_(self.layer_2.bias, a=b_low, b=b_high)
+		# Input layer
+		il = Linear(1, hidden_dim)
+		nn.init.xavier_uniform_(il.weight)
+		self.layers.append(il)
 
-		print(self.layer_1.weight.std())
-		print(self.layer_2.weight.std())
+		# Input activation
+		self.layers.append(act_func)
 
-		inp = torch.tensor([[100.]])
-		print(self.layer_2.weight @ Sigmoid()(inp @ self.layer_1.weight.T + self.layer_1.bias).T + self.layer_2.bias)
+		# Hidden layers
+		for i in range(hidden_layers):
+			hl = Linear(hidden_dim, hidden_dim)
+			nn.init.xavier_uniform_(hl.weight)
+			self.layers.append(hl)
+			self.layers.append(act_func)
 
-		inp = torch.tensor([[2345.]])
-		print(self.layer_2.weight @ Sigmoid()(inp @ self.layer_1.weight.T + self.layer_1.bias).T + self.layer_2.bias)
+		# Output layer
+		ol = Linear(hidden_dim, 1)
+		nn.init.xavier_normal_(ol.weight)
+		self.layers.append(ol)
 
-	def forward(self, temp):
+	def forward(self, x):
 		"""
 
-		:param temp: Temperature
+		:param x: Temperature
 		:return:
 		"""
-		s = self.layer_1(temp.float())
-		a = self.act_1(s)
 
-		# Gibbs energy
-		gibbs = self.layer_2(a)
+		for layer in self.layers:
+			x = layer(x.float())
 
-		print(gibbs.std())
-		print(gibbs.mean())
-
-		return gibbs
+		return x
 
 	def output_all(self, temp):
 		"""
@@ -75,14 +69,14 @@ class ThermoRegressionNet(nn.Module):
 		"""
 
 		# Entropy
-		s = self.layer_1(temp.float())
-		entropy = -self.layer_2.weight * self.act_1.first_derivative(s) @ self.layer_1.weight
+		s = self.layers[0](temp.float())
+		entropy = -self.layers[-1].weight * self.input_act.first_derivative(s) @ self.input_layer.weight
 
 		# Enthalpy
 		enthalpy = self.forward(temp) + temp * entropy
 
 		# Heat capacity
-		heat_cap = -temp * self.layer_2.weight * self.act_1.second_derivative(s) @ self.layer_1.weight.double() ** 2
+		heat_cap = -temp * self.output_layer.weight * self.input_act.second_derivative(s) @ self.input_layer.weight.double() ** 2
 
 		return entropy, enthalpy, heat_cap
 

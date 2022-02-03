@@ -46,18 +46,19 @@ class PlotHandler:
 			gibbs_p, entropy_p, enthalpy_p, heat_cap_p = net(temp_range, temp_range, temp_range, temp_range)
 		elif self.net == 'Thermo':
 			gibbs_p = net(temp_range)
-			entropy_p, enthalpy_p, heat_cap_p = net.output_all(temp_range)
+			#entropy_p, enthalpy_p, heat_cap_p = net.output_all(temp_range)
 
 		gibbs_p = gibbs_p.detach()
-		entropy_p = entropy_p.detach()
-		enthalpy_p = enthalpy_p.detach()
-		heat_cap_p = heat_cap_p.detach()
+		#entropy_p = entropy_p.detach()
+		#enthalpy_p = enthalpy_p.detach()
+		#heat_cap_p = heat_cap_p.detach()
 
 		def plot_property(temp_p, prop_p, temp_t, prop_t):
 			plt.figure()
-			plt.scatter(temp_t, prop_t, s=0.3, c='blue')
+			plt.scatter(temp_t, prop_t, s=0.3, c='blue', label='True')
 			plt.grid()
-			plt.scatter(temp_p, prop_p, s=0.3, c='red')
+			plt.scatter(temp_p, prop_p, s=0.3, c='red', label='Prediction')
+			plt.legend()
 			plt.show()
 
 		plot_property(temp, gibbs, temp_range, gibbs_p)
