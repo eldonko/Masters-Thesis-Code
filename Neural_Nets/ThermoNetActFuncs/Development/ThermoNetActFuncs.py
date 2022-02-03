@@ -25,8 +25,8 @@ class ChenSundman(nn.Module):
 
         # Initialize parameters
         self.R = Parameter(torch.tensor(8.3145), requires_grad=False)
-        self.E0 = Parameter(torch.tensor(1.0), requires_grad=True)
-        self.theta_E = Parameter(torch.tensor(1.0), requires_grad=True)
+        self.E0 = Parameter(torch.tensor(-10000.0), requires_grad=True)
+        self.theta_E = Parameter(torch.tensor(-1000.0), requires_grad=True)
         self.a = Parameter(torch.tensor(1.0), requires_grad=True)
         self.b = Parameter(torch.tensor(1.0), requires_grad=True)
 
@@ -39,7 +39,7 @@ class ChenSundman(nn.Module):
         """
 
         # Restrict self.theta_E to positive values as negative values can lead to numerical instability inside the log
-        self.theta_E.data = torch.tensor(max(1, int(self.theta_E.data)), dtype=torch.float32)
+        self.theta_E.data = torch.tensor(min(-1, int(self.theta_E.data)), dtype=torch.float32)
 
         return self.E0 + 3/2 * self.R * self.theta_E + 3 * self.R * s * (torch.log(1 - torch.exp(-self.theta_E/s))) - \
                 1/2 * self.a * s ** 2 - 1/6 * self.b * s ** 3
@@ -54,7 +54,7 @@ class ChenSundman(nn.Module):
         """
 
         # Restrict self.theta_E to positive values as negative values can lead to numerical instability inside the log
-        self.theta_E.data = torch.tensor(max(1, int(self.theta_E.data)), dtype=torch.float32)
+        self.theta_E.data = torch.tensor(min(-1, int(self.theta_E.data)), dtype=torch.float32)
 
         return 3 * self.R * (self.theta_E/(s - s * torch.exp(self.theta_E/s)) + (torch.log(1 - torch.exp(-self.theta_E/s)))) - \
                 self.a * s - 1/2 * self.b * s ** 2
@@ -69,7 +69,7 @@ class ChenSundman(nn.Module):
         """
 
         # Restrict self.theta_E to positive values as negative values can lead to numerical instability inside the log
-        self.theta_E.data = torch.tensor(max(1, int(self.theta_E.data)), dtype=torch.float32)
+        self.theta_E.data = torch.tensor(min(-1, int(self.theta_E.data)), dtype=torch.float32)
 
         return -(3 * self.theta_E ** 2 * self.R * torch.exp(self.theta_E/s))/(s ** 3 * (torch.exp(self.theta_E/s) - 1) ** 2) - \
                self.a - self.b * s

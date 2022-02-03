@@ -90,7 +90,6 @@ class SubNet(nn.Module):
                 print('Negative infinity detected in Gibbs energy @ ', idx_min)
                 print(xg[idx_min])
                 print(s)
-                print(self.act_1.theta_E)
 
         return gibbs
 
@@ -137,7 +136,6 @@ class SubNet(nn.Module):
                 idx_min = heat_cap.argmin().item()
                 print('Negative infinity detected in heat cap @ ', idx_min)
                 print(xc[idx_min])
-                print(self.act_1.theta_E)
 
         return heat_cap.float()
 

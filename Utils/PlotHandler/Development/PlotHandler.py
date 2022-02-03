@@ -61,6 +61,8 @@ class PlotHandler:
 			plt.show()
 
 		plot_property(temp, gibbs, temp_range, gibbs_p)
-		#plot_property(temp, entropy, temp_range, entropy_p)
-		#plot_property(temp, enthalpy, temp_range, enthalpy_p)
-		#plot_property(temp, heat_cap, temp_range, heat_cap_p)
+
+		if self.net == 'Laenge':
+			plot_property(temp, entropy, temp_range, entropy_p)
+			plot_property(temp, enthalpy, temp_range, enthalpy_p)
+			plot_property(temp, heat_cap, temp_range, heat_cap_p)
