@@ -1,6 +1,7 @@
 import torch
 import matplotlib.pyplot as plt
 from torch.utils.data import DataLoader
+from Neural_Nets.ThermoDataset.Development.ThermoDataset import ThermoDataset
 
 
 class PlotHandler:
@@ -12,43 +13,25 @@ class PlotHandler:
 
 		self.net = net
 
-	def properties_temp(self, net, dataset, start_temp=200, end_temp=2000, input_scaling=False):
+	def properties_temp(self, net, element, phase, start_temp=200, end_temp=2000, scaling=True):
 		"""
 		Plots Gibbs energy, entropy, enthalpy and heat capacity over the temperature
 		:param net: (trained) neural network which outputs shall be plotted
-		:param dataset: dataset containing the actual data
+		:param element: element to load the dataset for
+		:param phase: phase to load the dataset for
 		:param start_temp: low value of the temperature interval
 		:param end_temp: high value of the temperature interval
-		:param input_scaling: determines if inputs should be scaled or not
+		:param scaling: determines if inputs should be scaled or not
 		:return:
 		"""
 
-		temp_range = torch.tensor(list(range(start_temp, end_temp)), dtype=torch.float64).unsqueeze(-1)
-
-		temp, gibbs, entropy, enthalpy, heat_cap = None, None, None, None, None
-
-		dataloader = DataLoader(dataset, batch_size=len(dataset), shuffle=False)
-		if self.net == 'Laenge':
-			for t, g, s, h, c in dataloader:
-				temp, gibbs, entropy, enthalpy, heat_cap = t, g, s, h, c
-		elif self.net == 'Thermo':
-			for t, g in dataloader:
-				temp, gibbs = t, g
-
-		if start_temp < temp.min():
-			temp_range = torch.tensor(list(range(int(temp.min()), end_temp)), dtype=torch.float64).unsqueeze(-1)
-
-		# Input scaling
-		if input_scaling:
-			temp_range /= temp_range.max()
+		dataset = ThermoDataset(element, phase, start_temp, end_temp, scaling)
+		temp, gibbs, entropy, enthalpy, heat_cap = dataset.get_data()
 
 		if self.net == 'Laenge':
-			gibbs_p, entropy_p, enthalpy_p, heat_cap_p = net(temp_range, temp_range, temp_range, temp_range)
+			gibbs_p, entropy_p, enthalpy_p, heat_cap_p = net(temp, temp, temp, temp)
 		elif self.net == 'Thermo':
-			gibbs_p = net(temp_range)
-			print(gibbs_p)
-			print(gibbs)
-			print(temp_range)
+			gibbs_p = net(temp)
 			#entropy_p, enthalpy_p, heat_cap_p = net.output_all(temp_range)
 
 		gibbs_p = gibbs_p.detach()
@@ -56,17 +39,28 @@ class PlotHandler:
 		#enthalpy_p = enthalpy_p.detach()
 		#heat_cap_p = heat_cap_p.detach()
 
-		def plot_property(temp_t, prop_t, temp_p, prop_p):
+		print(temp.max())
+
+		def plot_property(prop_t, prop_p):
 			plt.figure()
-			plt.scatter(temp_t, prop_t, s=0.3, c='blue', label='True')
+			plt.scatter(temp, prop_t, s=0.3, c='blue', label='True')
+			plt.scatter(temp, prop_p, s=0.3, c='red', label='Prediction')
 			plt.grid()
-			plt.scatter(temp_p, prop_p, s=0.3, c='red', label='Prediction')
 			plt.legend()
 			plt.show()
 
-		plot_property(temp, gibbs, temp_range, gibbs_p)
+		if scaling:
+			print(gibbs_p)
+			_, gibbs_max = dataset.get_maximum()
+			print(gibbs_max)
+			gibbs_p *= gibbs_max
+
+		plot_property(gibbs, gibbs_p)
 
 		if self.net == 'Laenge':
-			plot_property(temp, entropy, temp_range, entropy_p)
-			plot_property(temp, enthalpy, temp_range, enthalpy_p)
-			plot_property(temp, heat_cap, temp_range, heat_cap_p)
+			entropy_p = entropy_p.detach()
+			enthalpy_p = enthalpy_p.detach()
+			heat_cap_p = heat_cap_p.detach()
+			plot_property(entropy, entropy_p)
+			plot_property(enthalpy, enthalpy_p)
+			plot_property(heat_cap, heat_cap_p)

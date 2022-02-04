@@ -213,28 +213,3 @@ class LaengeNetLossFunc(nn.Module):
             print('Total loss: ', loss, '\n')
 
         return loss
-
-
-class LaengeDataset(Dataset):
-    def __init__(self, element, phase):
-        super(LaengeDataset, self).__init__()
-
-        sgte_handler = SGTEHandler(element)
-        sgte_handler.evaluate_equations(200, 2000, 1e5, plot=False, phases=phase, entropy=True, enthalpy=True,
-                                        heat_capacity=True)
-        data = sgte_handler.equation_result_data
-
-        # Get values
-        temp = torch.tensor(data['Temperature'], dtype=torch.float64)
-        gibbs = torch.tensor(data.iloc[:, 1])
-        entropy = torch.tensor(data.iloc[:, 2])
-        enthalpy = torch.tensor(data.iloc[:, 3])
-        heat_cap = torch.tensor(data.iloc[:, 4])
-
-        self._samples = [(t, g, s, h, c) for t, g, s, h, c in zip(temp, gibbs, entropy, enthalpy, heat_cap)]
-
-    def __len__(self):
-        return len(self._samples)
-
-    def __getitem__(self, i: int):
-        return self._samples[i]

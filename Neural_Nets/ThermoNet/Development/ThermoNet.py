@@ -33,8 +33,8 @@ class ThermoRegressionNet(nn.Module):
         # Input layer
         il = Linear(1, hidden_dim)
         nn.init.xavier_uniform_(il.weight)
-        # self.layers.append(BatchNorm1d(1))
         self.layers.append(il)
+        #self.layers.append(BatchNorm1d(hidden_dim))
 
         # Input activation
         self.layers.append(act_func)
@@ -50,6 +50,9 @@ class ThermoRegressionNet(nn.Module):
             self.layers.append(hl)
 
             self.layers.append(act_func)
+
+        if hidden_layers < 1:
+            out_dim = hidden_dim
 
         # Output layer
         ol = Linear(out_dim, 1)
@@ -87,29 +90,3 @@ class ThermoRegressionNet(nn.Module):
             s) @ self.input_layer.weight.double() ** 2
 
         return entropy, enthalpy, heat_cap
-
-
-class ThermoDataset(Dataset):
-    def __init__(self, element, phase, start_temp=200, end_temp=2000, step=1):
-        super(ThermoDataset, self).__init__()
-
-        sgte_handler = SGTEHandler(element)
-        sgte_handler.evaluate_equations(start_temp, end_temp, 1e5, plot=False, phases=phase, entropy=True,
-                                        enthalpy=True,
-                                        heat_capacity=True, step=step)
-        data = sgte_handler.equation_result_data
-
-        # Get values
-        temp = torch.tensor(data['Temperature'], dtype=torch.float64)
-        temp /= temp.max()
-        gibbs = torch.sin(temp)
-
-        # gibbs = torch.tensor(data.iloc[:, 1])
-
-        self._samples = [(t, g) for t, g in zip(temp, gibbs)]
-
-    def __len__(self):
-        return len(self._samples)
-
-    def __getitem__(self, i: int):
-        return self._samples[i]

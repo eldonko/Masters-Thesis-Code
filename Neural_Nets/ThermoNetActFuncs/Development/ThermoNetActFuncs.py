@@ -148,6 +148,7 @@ class Sigmoid(nn.Module):
 
         return self.forward(s) * (1 - self.forward(s)) * (1 - 2 * self.forward(s))
 
+
 # Implementation of ELU activation flipped
 class ELUFlipped(nn.Module):
     def __init__(self):
@@ -205,7 +206,7 @@ class Log(nn.Module):
         :return: activation
         """
 
-        return torch.log(torch.maximum(s, torch.tensor(1)))
+        return torch.log(torch.maximum(s, torch.tensor(0.01)))
 
     def first_derivative(self, s):
         """
