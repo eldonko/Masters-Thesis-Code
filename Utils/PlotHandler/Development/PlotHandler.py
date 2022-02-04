@@ -13,7 +13,7 @@ class PlotHandler:
 
 		self.net = net
 
-	def properties_temp(self, net, element, phase, start_temp=200, end_temp=2000, scaling=True):
+	def properties_temp(self, net, element, phase, start_temp=200, end_temp=2000, scaling=True, unscale_output=True):
 		"""
 		Plots Gibbs energy, entropy, enthalpy and heat capacity over the temperature
 		:param net: (trained) neural network which outputs shall be plotted
@@ -22,10 +22,11 @@ class PlotHandler:
 		:param start_temp: low value of the temperature interval
 		:param end_temp: high value of the temperature interval
 		:param scaling: determines if inputs should be scaled or not
+		:param unscale_output: determines of outputs should be rescaled to original interval
 		:return:
 		"""
 
-		dataset = ThermoDataset(element, phase, start_temp, end_temp, scaling)
+		dataset = ThermoDataset(element, phase, start_temp, end_temp, scaling=scaling)
 		temp, gibbs, entropy, enthalpy, heat_cap = dataset.get_data()
 
 		if self.net == 'Laenge':
@@ -39,8 +40,6 @@ class PlotHandler:
 		#enthalpy_p = enthalpy_p.detach()
 		#heat_cap_p = heat_cap_p.detach()
 
-		print(temp.max())
-
 		def plot_property(prop_t, prop_p):
 			plt.figure()
 			plt.scatter(temp, prop_t, s=0.3, c='blue', label='True')
@@ -49,11 +48,11 @@ class PlotHandler:
 			plt.legend()
 			plt.show()
 
-		if scaling:
-			print(gibbs_p)
-			_, gibbs_max = dataset.get_maximum()
-			print(gibbs_max)
+		# Unscale output
+		if scaling and unscale_output:
+			temp_max, gibbs_max = dataset.get_maximum()
 			gibbs_p *= gibbs_max
+			temp *= temp_max
 
 		plot_property(gibbs, gibbs_p)
 
