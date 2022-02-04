@@ -27,7 +27,7 @@ class PlotHandler:
 
 		temp, gibbs, entropy, enthalpy, heat_cap = None, None, None, None, None
 
-		dataloader = DataLoader(dataset, batch_size=len(dataset))
+		dataloader = DataLoader(dataset, batch_size=len(dataset), shuffle=False)
 		if self.net == 'Laenge':
 			for t, g, s, h, c in dataloader:
 				temp, gibbs, entropy, enthalpy, heat_cap = t, g, s, h, c
@@ -46,6 +46,9 @@ class PlotHandler:
 			gibbs_p, entropy_p, enthalpy_p, heat_cap_p = net(temp_range, temp_range, temp_range, temp_range)
 		elif self.net == 'Thermo':
 			gibbs_p = net(temp_range)
+			print(gibbs_p)
+			print(gibbs)
+			print(temp_range)
 			#entropy_p, enthalpy_p, heat_cap_p = net.output_all(temp_range)
 
 		gibbs_p = gibbs_p.detach()
@@ -53,7 +56,7 @@ class PlotHandler:
 		#enthalpy_p = enthalpy_p.detach()
 		#heat_cap_p = heat_cap_p.detach()
 
-		def plot_property(temp_p, prop_p, temp_t, prop_t):
+		def plot_property(temp_t, prop_t, temp_p, prop_p):
 			plt.figure()
 			plt.scatter(temp_t, prop_t, s=0.3, c='blue', label='True')
 			plt.grid()

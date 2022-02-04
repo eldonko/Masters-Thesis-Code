@@ -1,98 +1,110 @@
 import torch
 import torch.nn as nn
-from torch.nn import Linear
+from torch.nn import Linear, BatchNorm1d
 from torch.nn.parameter import Parameter
 from torch.utils.data import Dataset
 import numpy as np
 from Data_Handling.SGTEHandler.Development.SGTEHandler import SGTEHandler
-from Neural_Nets.ThermoNetActFuncs.Development.ThermoNetActFuncs import ChenSundman, Softplus, Sigmoid
+from Neural_Nets.ThermoNetActFuncs.Development.ThermoNetActFuncs import ChenSundman, Softplus, Sigmoid, ELUFlipped
 
 
 class ThermoNet(nn.Module):
-	"""
-	Implementation of neural network that aims to predict Gibbs energy, entropy, enthalpy and heat capacity for any
-	element from the periodic table given temperature and data for the element
-	"""
-	def __init__(self):
-		super(ThermoNet, self).__init__()
+    """
+    Implementation of neural network that aims to predict Gibbs energy, entropy, enthalpy and heat capacity for any
+    element from the periodic table given temperature and data for the element
+    """
+
+    def __init__(self):
+        super(ThermoNet, self).__init__()
 
 
 class ThermoRegressionNet(nn.Module):
-	"""
-	This network aims to learn the Gibbs energy, entropy, enthalpy and heat capacity for any element given temperature
-	value. It will be used in ThermoNet after an initial network which outputs modified temperature values and active
-	phases based on the element data which it receives as input.
-	"""
+    """
+    This network aims to learn the Gibbs energy, entropy, enthalpy and heat capacity for any element given temperature
+    value. It will be used in ThermoNet after an initial network which outputs modified temperature values and active
+    phases based on the element data which it receives as input.
+    """
 
-	def __init__(self, hidden_layers=1, hidden_dim=16, act_func=Sigmoid()):
-		super(ThermoRegressionNet, self).__init__()
+    def __init__(self, hidden_layers=1, hidden_dim=16, act_func=Sigmoid()):
+        super(ThermoRegressionNet, self).__init__()
 
-		self.layers = nn.ModuleList()
+        self.layers = nn.ModuleList()
 
-		# Input layer
-		il = Linear(1, hidden_dim)
-		nn.init.xavier_uniform_(il.weight)
-		self.layers.append(il)
+        # Input layer
+        il = Linear(1, hidden_dim)
+        nn.init.xavier_uniform_(il.weight)
+        # self.layers.append(BatchNorm1d(1))
+        self.layers.append(il)
 
-		# Input activation
-		self.layers.append(act_func)
+        # Input activation
+        self.layers.append(act_func)
+        # self.layers.append(Softplus())
 
-		# Hidden layers
-		for i in range(hidden_layers):
-			hl = Linear(hidden_dim, hidden_dim)
-			nn.init.xavier_uniform_(hl.weight)
-			self.layers.append(hl)
-			self.layers.append(act_func)
+        # Hidden layers
+        for i in range(hidden_layers):
+            in_dim = int(hidden_dim / (2 ** i))
+            out_dim = int(hidden_dim / (2 ** (i + 1)))
+            hl = Linear(in_dim, out_dim)
+            nn.init.xavier_uniform_(hl.weight)
+            # self.layers.append(BatchNorm1d(hidden_dim))
+            self.layers.append(hl)
 
-		# Output layer
-		ol = Linear(hidden_dim, 1)
-		nn.init.xavier_normal_(ol.weight)
-		self.layers.append(ol)
+            self.layers.append(act_func)
 
-	def forward(self, x):
-		"""
+        # Output layer
+        ol = Linear(out_dim, 1)
+        nn.init.xavier_normal_(ol.weight)
+        self.layers.append(ol)
 
-		:param x: Temperature
-		:return:
-		"""
+    def forward(self, x):
+        """
 
-		for layer in self.layers:
-			x = layer(x.float())
+        :param x: Temperature
+        :return:
+        """
 
-		return x
+        for layer in self.layers:
+            x = layer(x.float())
 
-	def output_all(self, temp):
-		"""
+        return x
 
-		:param temp: Temperature
-		:return: entropy, enthalpy and heat capacity for given temperature
-		"""
+    def output_all(self, temp):
+        """
 
-		# Entropy
-		s = self.layers[0](temp.float())
-		entropy = -self.layers[-1].weight * self.input_act.first_derivative(s) @ self.input_layer.weight
+        :param temp: Temperature
+        :return: entropy, enthalpy and heat capacity for given temperature
+        """
 
-		# Enthalpy
-		enthalpy = self.forward(temp) + temp * entropy
+        # Entropy
+        s = self.layers[0](temp.float())
+        entropy = -self.layers[-1].weight * self.input_act.first_derivative(s) @ self.input_layer.weight
 
-		# Heat capacity
-		heat_cap = -temp * self.output_layer.weight * self.input_act.second_derivative(s) @ self.input_layer.weight.double() ** 2
+        # Enthalpy
+        enthalpy = self.forward(temp) + temp * entropy
 
-		return entropy, enthalpy, heat_cap
+        # Heat capacity
+        heat_cap = -temp * self.output_layer.weight * self.input_act.second_derivative(
+            s) @ self.input_layer.weight.double() ** 2
+
+        return entropy, enthalpy, heat_cap
 
 
 class ThermoDataset(Dataset):
-    def __init__(self, element, phase):
+    def __init__(self, element, phase, start_temp=200, end_temp=2000, step=1):
         super(ThermoDataset, self).__init__()
 
         sgte_handler = SGTEHandler(element)
-        sgte_handler.evaluate_equations(200, 2000, 1e5, plot=False, phases=phase, entropy=True, enthalpy=True,
-                                        heat_capacity=True)
+        sgte_handler.evaluate_equations(start_temp, end_temp, 1e5, plot=False, phases=phase, entropy=True,
+                                        enthalpy=True,
+                                        heat_capacity=True, step=step)
         data = sgte_handler.equation_result_data
 
         # Get values
         temp = torch.tensor(data['Temperature'], dtype=torch.float64)
-        gibbs = torch.tensor(data.iloc[:, 1])
+        temp /= temp.max()
+        gibbs = torch.sin(temp)
+
+        # gibbs = torch.tensor(data.iloc[:, 1])
 
         self._samples = [(t, g) for t, g in zip(temp, gibbs)]
 

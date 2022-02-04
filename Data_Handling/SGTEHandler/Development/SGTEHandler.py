@@ -98,7 +98,7 @@ class SGTEHandler(object):
         self.selected_phases = selected_phases
 
     def evaluate_equations(self, start_temp, end_temp, p, gibbs=True, entropy=False, enthalpy=False, heat_capacity=False
-                           , plot=True, phases=None):
+                           , plot=True, phases=None, step=1):
         """
         Evaluates the Gibbs energy for a temperature range and selected phase at a certain pressure.
         :param start_temp: lower bound of the temperature interval
@@ -110,12 +110,13 @@ class SGTEHandler(object):
         :param heat_capacity: (optional) if True, heat capacity is evaluated
         :param plot: (optional) Determines if data shall be plotted
         :param phases: (optional) phases to be evaluated can be selected
+        :param step: step size of temp_range
         :return:
         """
 
         self.set_phases(phases)
 
-        temp_range = np.arange(start_temp, end_temp, dtype=np.float32)
+        temp_range = np.arange(start_temp, end_temp, step, dtype=np.float32)
         ax_gibbs = None
         ax_entropy = None
         ax_enthalpy = None
