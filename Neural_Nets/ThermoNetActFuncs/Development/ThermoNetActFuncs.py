@@ -26,7 +26,7 @@ class ChenSundman(nn.Module):
         # Initialize parameters
         self.R = Parameter(torch.tensor(8.3145), requires_grad=False)
         self.E0 = Parameter(torch.tensor(-10000.0), requires_grad=True)
-        self.theta_E = Parameter(torch.tensor(-1000.0), requires_grad=True)
+        self.theta_E = Parameter(torch.tensor(-10.0), requires_grad=True)
         self.a = Parameter(torch.tensor(1.0), requires_grad=True)
         self.b = Parameter(torch.tensor(1.0), requires_grad=True)
 

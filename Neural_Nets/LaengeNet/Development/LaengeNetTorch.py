@@ -136,6 +136,7 @@ class SubNet(nn.Module):
                 idx_min = heat_cap.argmin().item()
                 print('Negative infinity detected in heat cap @ ', idx_min)
                 print(xc[idx_min])
+                #print(self.act_1.second_derivative(s))
 
         return heat_cap.float()
 

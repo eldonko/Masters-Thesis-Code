@@ -33,20 +33,19 @@ class PlotHandler:
 			gibbs_p, entropy_p, enthalpy_p, heat_cap_p = net(temp, temp, temp, temp)
 		elif self.net == 'Thermo':
 			gibbs_p = net(temp)
-			entropy_p, enthalpy_p, _ = net.output_all(temp)
+			entropy_p, enthalpy_p, heat_cap_p = net.output_all(temp)
 
-		def plot_property(prop_t, prop_p):
-			plt.figure()
-			plt.scatter(temp, prop_t, s=0.3, c='blue', label='True')
-			plt.scatter(temp, prop_p, s=0.3, c='red', label='Prediction')
-			plt.grid()
-			plt.legend()
-			plt.show()
+		def plot_property(prop_t, prop_p, ax, title):
+			ax.scatter(temp, prop_t, s=0.3, c='blue', label='True')
+			ax.scatter(temp, prop_p, s=0.3, c='red', label='Prediction')
+			ax.grid()
+			ax.legend()
+			ax.set_title(title)
 
 		gibbs_p = gibbs_p.detach()
 		entropy_p = entropy_p.detach()
 		enthalpy_p = enthalpy_p.detach()
-		# heat_cap_p = heat_cap_p.detach()
+		heat_cap_p = heat_cap_p.detach()
 		temp = temp.detach()
 
 		# Unscale output
@@ -55,11 +54,14 @@ class PlotHandler:
 			gibbs_p *= gibbs_max
 			gibbs *= gibbs_max
 			temp *= temp_max
+		elif scaling:
+			temp_max, gibbs_max = dataset.get_maximum()
+			entropy /= abs(entropy).max()
+			enthalpy /= abs(enthalpy).max()
 
-		plot_property(gibbs, gibbs_p)
-		plot_property(entropy, entropy_p)
-		plot_property(enthalpy, enthalpy_p)
-
-		if self.net == 'Laenge':
-			heat_cap_p = heat_cap_p.detach()
-			plot_property(heat_cap, heat_cap_p)
+		fig, axes = plt.subplots(4, sharex=True, figsize=(7, 28))
+		plot_property(gibbs, gibbs_p, axes[0], 'Gibbs energy over temperature')
+		plot_property(entropy, entropy_p, axes[1], 'Entropy over temperature')
+		plot_property(enthalpy, enthalpy_p, axes[2], 'Enthalpy over temperature')
+		plot_property(heat_cap, heat_cap_p, axes[3], 'Heat capacity over temperature')
+		plt.show()
