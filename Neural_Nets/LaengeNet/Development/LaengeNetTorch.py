@@ -5,7 +5,7 @@ from torch.nn.parameter import Parameter
 from torch.utils.data import Dataset
 import numpy as np
 from Data_Handling.SGTEHandler.Development.SGTEHandler import SGTEHandler
-from Neural_Nets.ThermoNetActFuncs.Development.ThermoNetActFuncs import ChenSundman, Softplus, Sigmoid
+from Neural_Nets.ThermoNetActFuncs.Development.ThermoNetActFuncs import ChenSundman, Softplus
 
 
 class LaengeNet(nn.Module):

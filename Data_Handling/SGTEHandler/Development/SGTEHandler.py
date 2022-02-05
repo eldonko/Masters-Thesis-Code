@@ -241,9 +241,6 @@ class SGTEHandler(object):
                     d_sum_entropies -= val[1] * val[0] * temp_range ** (val[0] - 1)
                 if enthalpy:
                     d_sum_enthalpies -= val[1] * (val[0] - 1) * temp_range ** val[0]
-
-                    if val[0] == 0:
-                        d_sum_enthalpies += val[1] * (val[0] - 1) * temp_range ** val[0]
                 if heat_capacity:
                     d_sum_heat_capacities -= val[0] * (val[0] - 1) * val[1] * temp_range ** (val[0] - 1)
 
@@ -407,7 +404,7 @@ class SGTEHandler(object):
 
         tau = T / Tcrit
 
-        f_tau[T > Tcrit] = -(2 * tau[T > Tcrit] ** -5 / 5 + 2 * tau[T > Tcrit] ** -15 / 45 + 2 * tau[T > Tcrit] ** -25 / 125) / D
+        f_tau[T > Tcrit] = (2 * tau[T > Tcrit] ** -5 / 5 + 2 * tau[T > Tcrit] ** -15 / 45 + 2 * tau[T > Tcrit] ** -25 / 125) / D
         f_tau[T <= Tcrit] = 1 - (474 / 497 * (1 / p - 1) * (2 * tau[T <= Tcrit] ** 3 / 3 + 2 * tau[T <= Tcrit] ** 9 / 27
                                                             + 2 * tau[T <= Tcrit] ** 15 / 75)) / D
 

@@ -1,11 +1,7 @@
 import torch
 import torch.nn as nn
-from torch.nn import Linear, BatchNorm1d
-from torch.nn.parameter import Parameter
-from torch.utils.data import Dataset
-import numpy as np
-from Data_Handling.SGTEHandler.Development.SGTEHandler import SGTEHandler
-from Neural_Nets.ThermoNetActFuncs.Development.ThermoNetActFuncs import ChenSundman, Softplus, Sigmoid, ELUFlipped
+from torch.nn import Linear
+import torch.autograd as autograd
 
 
 class ThermoNet(nn.Module):
@@ -25,8 +21,16 @@ class ThermoRegressionNet(nn.Module):
     phases based on the element data which it receives as input.
     """
 
-    def __init__(self, hidden_layers=1, hidden_dim=16, act_func=Sigmoid()):
+    def __init__(self, hidden_layers=1, hidden_dim=16, act_funcs=None):
         super(ThermoRegressionNet, self).__init__()
+
+        # Needed for entropy (derivatives of forward)
+        self._cache = []
+
+        if act_funcs is None:
+            act_funcs = [nn.Softplus()] * (hidden_layers + 1)
+
+        assert len(act_funcs) == hidden_layers + 1
 
         self.layers = nn.ModuleList()
 
@@ -34,11 +38,9 @@ class ThermoRegressionNet(nn.Module):
         il = Linear(1, hidden_dim)
         nn.init.xavier_uniform_(il.weight)
         self.layers.append(il)
-        #self.layers.append(BatchNorm1d(hidden_dim))
 
         # Input activation
-        self.layers.append(act_func)
-        # self.layers.append(Softplus())
+        self.layers.append(act_funcs[0])
 
         # Hidden layers
         for i in range(hidden_layers):
@@ -46,10 +48,9 @@ class ThermoRegressionNet(nn.Module):
             out_dim = int(hidden_dim / (2 ** (i + 1)))
             hl = Linear(in_dim, out_dim)
             nn.init.xavier_uniform_(hl.weight)
-            # self.layers.append(BatchNorm1d(hidden_dim))
             self.layers.append(hl)
 
-            self.layers.append(act_func)
+            self.layers.append(act_funcs[i + 1])
 
         if hidden_layers < 1:
             out_dim = hidden_dim
@@ -79,14 +80,14 @@ class ThermoRegressionNet(nn.Module):
         """
 
         # Entropy
-        s = self.layers[0](temp.float())
-        entropy = -self.layers[-1].weight * self.input_act.first_derivative(s) @ self.input_layer.weight
+        temp.requires_grad = True
+        entropy = -1 * autograd.grad(self(temp), temp, grad_outputs=torch.ones_like(self(temp)))[0]
 
         # Enthalpy
-        enthalpy = self.forward(temp) + temp * entropy
+        enthalpy = self(temp) + temp * entropy
 
         # Heat capacity
-        heat_cap = -temp * self.output_layer.weight * self.input_act.second_derivative(
-            s) @ self.input_layer.weight.double() ** 2
+        entropy.requires_grad = True
+        heat_cap = autograd.grad(-1 * entropy, temp, grad_outputs=torch.ones_like(entropy), allow_unused=True)[0]
 
         return entropy, enthalpy, heat_cap

@@ -99,7 +99,10 @@ class Softplus(nn.Module):
         :return: activation
         """
 
-        return torch.exp(s) / (torch.exp(s) + 1)
+        relu_prime = torch.zeros_like(s)
+        relu_prime[s > 0] = 1
+
+        return relu_prime - s/(torch.exp(abs(s)) * abs(s) + abs(s))
 
     @staticmethod
     def second_derivative(s):
@@ -111,119 +114,3 @@ class Softplus(nn.Module):
         """
 
         return torch.exp(s) / (torch.exp(s) + 1) ** 2
-
-
-# Own implementation of Sigmoid activation so that derivatives can be used
-class Sigmoid(nn.Module):
-    def __init__(self):
-        super(Sigmoid, self).__init__()
-
-    def forward(self, s):
-        """
-        Forward of Sigmoid activation
-
-        :param s: pre-activation
-        :return: activation
-        """
-
-        return 1/(1 + torch.exp(-s))
-
-    def first_derivative(self, s):
-        """
-        Returns the first derivative of the softplus activation for an input s
-
-        :param s: pre-activation
-        :return: activation
-        """
-
-        return self.forward(s) * (1 - self.forward(s))
-
-    def second_derivative(self, s):
-        """
-        Returns the second derivative of the softplus activation for an input s
-
-        :param s: pre-activation
-        :return: activation
-        """
-
-        return self.forward(s) * (1 - self.forward(s)) * (1 - 2 * self.forward(s))
-
-
-# Implementation of ELU activation flipped
-class ELUFlipped(nn.Module):
-    def __init__(self):
-        super(ELUFlipped, self).__init__()
-
-    def forward(self, s, alpha=1.):
-        """
-        Forward of flipped ELU function so that:
-
-        a(s) = s if s <= 0 else a(s) = alpha * (e^(-s) - 1)
-
-        :param s: pre-activation
-        :param alpha: pre-factor
-        :return: activation
-        """
-
-        return torch.where(s < 0, s, alpha * (torch.exp(-s) - 1))
-
-    def first_derivative(self, s):
-        """
-        Returns the first derivative of the softplus activation for an input s
-
-        :param s: pre-activation
-        :return: activation
-        """
-
-        return self.forward(s) * (1 - self.forward(s))
-
-    def second_derivative(self, s):
-        """
-        Returns the second derivative of the softplus activation for an input s
-
-        :param s: pre-activation
-        :return: activation
-        """
-
-        return self.forward(s) * (1 - self.forward(s)) * (1 - 2 * self.forward(s))
-
-
-# Implementation of ELU activation capped
-class Log(nn.Module):
-    def __init__(self, alpha=1e-7):
-        """
-        :param alpha: pre-factor
-        """
-        super(Log, self).__init__()
-
-        self.alpha = alpha
-
-    def forward(self, s):
-        """
-        Forward of squared activation function
-
-        :param s: pre-activation
-        :return: activation
-        """
-
-        return torch.log(torch.maximum(s, torch.tensor(0.01)))
-
-    def first_derivative(self, s):
-        """
-        Returns the first derivative of the softplus activation for an input s
-
-        :param s: pre-activation
-        :return: activation
-        """
-
-        return self.forward(s) * (1 - self.forward(s))
-
-    def second_derivative(self, s):
-        """
-        Returns the second derivative of the softplus activation for an input s
-
-        :param s: pre-activation
-        :return: activation
-        """
-
-        return self.forward(s) * (1 - self.forward(s)) * (1 - 2 * self.forward(s))

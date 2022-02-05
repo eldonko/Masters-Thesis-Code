@@ -33,12 +33,7 @@ class PlotHandler:
 			gibbs_p, entropy_p, enthalpy_p, heat_cap_p = net(temp, temp, temp, temp)
 		elif self.net == 'Thermo':
 			gibbs_p = net(temp)
-			#entropy_p, enthalpy_p, heat_cap_p = net.output_all(temp_range)
-
-		gibbs_p = gibbs_p.detach()
-		#entropy_p = entropy_p.detach()
-		#enthalpy_p = enthalpy_p.detach()
-		#heat_cap_p = heat_cap_p.detach()
+			entropy_p, enthalpy_p, _ = net.output_all(temp)
 
 		def plot_property(prop_t, prop_p):
 			plt.figure()
@@ -48,18 +43,23 @@ class PlotHandler:
 			plt.legend()
 			plt.show()
 
+		gibbs_p = gibbs_p.detach()
+		entropy_p = entropy_p.detach()
+		enthalpy_p = enthalpy_p.detach()
+		# heat_cap_p = heat_cap_p.detach()
+		temp = temp.detach()
+
 		# Unscale output
 		if scaling and unscale_output:
 			temp_max, gibbs_max = dataset.get_maximum()
 			gibbs_p *= gibbs_max
+			gibbs *= gibbs_max
 			temp *= temp_max
 
 		plot_property(gibbs, gibbs_p)
+		plot_property(entropy, entropy_p)
+		plot_property(enthalpy, enthalpy_p)
 
 		if self.net == 'Laenge':
-			entropy_p = entropy_p.detach()
-			enthalpy_p = enthalpy_p.detach()
 			heat_cap_p = heat_cap_p.detach()
-			plot_property(entropy, entropy_p)
-			plot_property(enthalpy, enthalpy_p)
 			plot_property(heat_cap, heat_cap_p)
