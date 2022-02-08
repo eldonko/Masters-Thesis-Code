@@ -1,12 +1,12 @@
 import torch
 import torch.nn as nn
-from torch.nn import Linear, ReLU, Sequential
+from torch.nn import Linear, ReLU, Sequential, Softplus
 from Neural_Nets.ThermoNetActFuncs.Development.ThermoNetActFuncs import ChenSundman, Softplus
 
 
 def init_weights(m):
     if isinstance(m, nn.Linear):
-        torch.nn.init.xavier_uniform(m.weight)
+        torch.nn.init.xavier_uniform_(m.weight)
         m.bias.data.fill_(0.01)
 
 
@@ -16,9 +16,11 @@ class LaengeNetModified(nn.Module):
 
         self.layers = Sequential(
             Linear(1, hidden_dim),
-            ReLU(),
+            Softplus(),
             Linear(hidden_dim, hidden_dim),
-            ReLU(),
+            Softplus(),
+            Linear(hidden_dim, hidden_dim),
+            Softplus(),
             Linear(hidden_dim, 4)
         )
 

@@ -1,6 +1,7 @@
 import torch
 from Data_Handling.SGTEHandler.Development.SGTEHandler import SGTEHandler
 from torch.utils.data import Dataset
+import numpy as np
 
 
 class ThermoDatasetModified(Dataset):
@@ -14,13 +15,13 @@ class ThermoDatasetModified(Dataset):
         data = sgte_handler.equation_result_data
 
         # Get values
-        temp = torch.tensor(data['Temperature'], dtype=torch.float64)
+        self.temp = torch.tensor(data['Temperature'], dtype=torch.float64)
         data.iloc[:, 1] /= 1000
         data.iloc[:, 3] /= 1000
-        print(data.shape)
-        prediction = torch.Tensor(data.iloc[:, 1:].values)
 
-        self._samples = [(t, p) for t, p in zip(temp, prediction)]
+        self.targets = torch.Tensor(data.iloc[:, 1:].values)
+
+        self._samples = list(zip(self.temp, self.targets))
 
     def __len__(self):
         return len(self._samples)
@@ -29,11 +30,4 @@ class ThermoDatasetModified(Dataset):
         return self._samples[i]
 
     def get_data(self):
-        temp, gibbs, entropy, enthalpy, heat_cap = zip(*self._samples)
-        temp = torch.tensor(temp, requires_grad=False).unsqueeze(-1)
-        gibbs = torch.tensor(gibbs, requires_grad=False)
-        entropy = torch.tensor(entropy, requires_grad=False)
-        enthalpy = torch.tensor(enthalpy, requires_grad=False)
-        heat_cap = torch.tensor(heat_cap, requires_grad=False)
-
-        return temp, gibbs, entropy, enthalpy, heat_cap
+        return self.temp.unsqueeze(-1), self.targets

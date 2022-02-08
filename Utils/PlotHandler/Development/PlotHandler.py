@@ -2,6 +2,7 @@ import torch
 import matplotlib.pyplot as plt
 from torch.utils.data import DataLoader
 from Neural_Nets.ThermoDataset.Development.ThermoDataset import ThermoDataset
+from Neural_Nets.ThermoDatasetModified.Development.ThermoDatasetModified import ThermoDatasetModified
 
 
 class PlotHandler:
@@ -31,18 +32,9 @@ class PlotHandler:
 
 		if self.net == 'Laenge':
 			gibbs_p, entropy_p, enthalpy_p, heat_cap_p = net(temp, temp, temp, temp)
-		elif self.net == 'LaengeModified':
-			gibbs_p, entropy_p, enthalpy_p, heat_cap_p = net(temp)
 		elif self.net == 'Thermo':
 			gibbs_p = net(temp)
 			entropy_p, enthalpy_p, heat_cap_p = net.output_all(temp)
-
-		def plot_property(prop_t, prop_p, ax, title):
-			ax.scatter(temp, prop_t, s=0.3, c='blue', label='True')
-			ax.scatter(temp, prop_p, s=0.3, c='red', label='Prediction')
-			ax.grid()
-			ax.legend()
-			ax.set_title(title)
 
 		gibbs_p = gibbs_p.detach()
 		entropy_p = entropy_p.detach()
@@ -61,8 +53,32 @@ class PlotHandler:
 			enthalpy /= abs(enthalpy).max()
 
 		fig, axes = plt.subplots(4, sharex=True, figsize=(7, 28))
-		plot_property(gibbs, gibbs_p, axes[0], 'Gibbs energy over temperature')
-		plot_property(entropy, entropy_p, axes[1], 'Entropy over temperature')
-		plot_property(enthalpy, enthalpy_p, axes[2], 'Enthalpy over temperature')
-		plot_property(heat_cap, heat_cap_p, axes[3], 'Heat capacity over temperature')
+		self.plot_property(temp, gibbs, gibbs_p, axes[0], 'Gibbs energy over temperature')
+		self.plot_property(temp, entropy, entropy_p, axes[1], 'Entropy over temperature')
+		self.plot_property(temp, enthalpy, enthalpy_p, axes[2], 'Enthalpy over temperature')
+		self.plot_property(temp, heat_cap, heat_cap_p, axes[3], 'Heat capacity over temperature')
+		plt.show()
+
+	@staticmethod
+	def plot_property(temp, prop_t, prop_p, ax, title):
+		ax.scatter(temp, prop_t, s=0.3, c='blue', label='True')
+		ax.scatter(temp, prop_p, s=0.3, c='red', label='Prediction')
+		ax.grid()
+		ax.legend()
+		ax.set_title(title)
+
+	def properties_temp_modified(self, net, element, phase, start_temp=200, end_temp=2000):
+		dataset = ThermoDatasetModified(element, phase, start_temp, end_temp)
+		temp, targets = dataset.get_data()
+
+		predictions = net(temp.float())
+
+		predictions = predictions.detach()
+		temp = temp.detach()
+
+		fig, axes = plt.subplots(4, sharex=True, figsize=(7, 28))
+		self.plot_property(temp, targets[:, 0], predictions[:, 0], axes[0], 'Gibbs energy over temperature')
+		self.plot_property(temp, targets[:, 1], predictions[:, 1], axes[1], 'Entropy over temperature')
+		self.plot_property(temp, targets[:, 2], predictions[:, 2], axes[2], 'Enthalpy over temperature')
+		self.plot_property(temp, targets[:, 3], predictions[:, 3], axes[3], 'Heat capacity over temperature')
 		plt.show()
