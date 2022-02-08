@@ -31,6 +31,8 @@ class PlotHandler:
 
 		if self.net == 'Laenge':
 			gibbs_p, entropy_p, enthalpy_p, heat_cap_p = net(temp, temp, temp, temp)
+		elif self.net == 'LaengeModified':
+			gibbs_p, entropy_p, enthalpy_p, heat_cap_p = net(temp)
 		elif self.net == 'Thermo':
 			gibbs_p = net(temp)
 			entropy_p, enthalpy_p, heat_cap_p = net.output_all(temp)
@@ -55,7 +57,6 @@ class PlotHandler:
 			gibbs *= gibbs_max
 			temp *= temp_max
 		elif scaling:
-			temp_max, gibbs_max = dataset.get_maximum()
 			entropy /= abs(entropy).max()
 			enthalpy /= abs(enthalpy).max()
 

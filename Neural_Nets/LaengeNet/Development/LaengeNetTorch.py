@@ -1,10 +1,6 @@
 import torch
 import torch.nn as nn
 from torch.nn import Linear
-from torch.nn.parameter import Parameter
-from torch.utils.data import Dataset
-import numpy as np
-from Data_Handling.SGTEHandler.Development.SGTEHandler import SGTEHandler
 from Neural_Nets.ThermoNetActFuncs.Development.ThermoNetActFuncs import ChenSundman, Softplus
 
 
@@ -62,13 +58,16 @@ class SubNet(nn.Module):
     def _initialize_parameters(self, init_func, *args):
         # Initialize parameters
         if init_func == nn.init.uniform_:
-            low = args[0][0]
-            high = args[0][1]
+            low = min(args[0])
+            high = max(args[0])
 
             init_func(self.layer_1.weight, a=low, b=high)
             init_func(self.layer_1.bias, a=low, b=high)
             init_func(self.layer_2.weight, a=low, b=high)
             init_func(self.layer_2.bias, a=low, b=high)
+        elif init_func == nn.init.xavier_normal_ or init_func == nn.init.xavier_uniform_:
+            init_func(self.layer_1.weight)
+            init_func(self.layer_2.weight)
 
     def gibbs(self, xg):
         """
@@ -90,6 +89,7 @@ class SubNet(nn.Module):
                 print('Negative infinity detected in Gibbs energy @ ', idx_min)
                 print(xg[idx_min])
                 print(s)
+                print(a)
 
         return gibbs
 
@@ -136,7 +136,6 @@ class SubNet(nn.Module):
                 idx_min = heat_cap.argmin().item()
                 print('Negative infinity detected in heat cap @ ', idx_min)
                 print(xc[idx_min])
-                #print(self.act_1.second_derivative(s))
 
         return heat_cap.float()
 
@@ -213,4 +212,4 @@ class LaengeNetLossFunc(nn.Module):
             print('Weights: ', self.weights)
             print('Total loss: ', loss, '\n')
 
-        return loss
+        return loss, gibbs_loss, entropy_loss, enthalpy_loss, heat_cap_loss
