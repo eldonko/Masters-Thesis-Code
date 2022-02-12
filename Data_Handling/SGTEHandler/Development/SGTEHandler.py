@@ -14,9 +14,9 @@ class SGTEHandler(object):
         self.element = None
         self.elements = ['Ag', 'Al', 'Am', 'As', 'Au', 'B', 'Ba', 'Be', 'Bi', 'C', 'Ca', 'Cd', 'Ce', 'Co', 'Cr', 'Cs',
                          'Cu', 'Dy', 'Er', 'Eu', 'Fe', 'Ga', 'Gd', 'Ge', 'Hf', 'Hg', 'Ho', 'In', 'Ir', 'K', 'La', 'Li',
-                         'Lu', 'Mg', 'Mn', 'Mo', 'Na', 'Nb', 'Nd', 'Ni', 'Np', 'Os', 'P', 'Pa', 'Pb', 'Pd', 'Pr', 'Pt',
-                         'Pu', 'Rb', 'Re', 'Rh', 'Ru', 'S', 'Sb', 'Sc', 'Se', 'Si', 'Sm', 'Sn', 'Sr', 'Ta', 'Tb', 'Tc',
-                         'Te', 'Th', 'Ti', 'Tl', 'Tm', 'U', 'V', 'W', 'Y', 'Yb', 'Zn', 'Zr']
+                         'Lu', 'Mg', 'Mn', 'Mo', 'N', 'Na', 'Nb', 'Nd', 'Ni', 'Np', 'O', 'Os', 'P', 'Pa', 'Pb', 'Pd',
+                         'Pr', 'Pt', 'Pu', 'Rb', 'Re', 'Rh', 'Ru', 'S', 'Sb', 'Sc', 'Se', 'Si', 'Sm', 'Sn', 'Sr', 'Ta',
+                         'Tb', 'Tc', 'Te', 'Th', 'Ti', 'Tl', 'Tm', 'U', 'V', 'W', 'Y', 'Yb', 'Zn', 'Zr']
 
         self.errors = {'INP_1': '*** INP_1 *** Invalid input, please try again!'}
 
@@ -37,8 +37,7 @@ class SGTEHandler(object):
 
         while self.element not in self.elements:
             self.element = input('Please enter element name: ').capitalize()
-
-        print(self.element + ' successfully selected!\n')
+            print(self.element + ' successfully selected!\n')
 
         inp_file = os.path.join(r"C:\Users\danie\Documents\Montanuni\Masterarbeit\4_Daten\SGTE Data", self.element + '.xlsx')
         self.load_data(inp_file)

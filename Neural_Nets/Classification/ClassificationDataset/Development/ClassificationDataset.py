@@ -34,22 +34,62 @@ class DatasetCreator(object):
         # Input checking
         assert temp_range[0] < temp_range[1]
         assert measurement in ['G', 'S', 'H', 'C']
-        if validation:
+        if not validation:
             assert len(splits) == 2
         else:
             assert len(splits) == 3
-        assert np.array(splits) == 1
+        assert np.array(splits).sum() == 1
+        assert elements is None or type(elements) == list
 
         # Load the element-phase excel sheet to get all elements and to create the labels
-        element_phase_data = pd.read_excel()
+        element_phase_data = pd.read_excel(element_phase_filename, sheet_name='Phases').set_index('Index')
 
-        # Create the element dataset creators
-        
+        # If only certain phases shall be selected, then just retrieve those phases from element_phase_data
+        if elements is not None:
+            element_phase_data = element_phase_data[elements]
+
+        # Prepare creating the labels for each element.
+        phases_per_element = element_phase_data.sum()
+        last_label = 0
+
+        train_data, test_data, val_data = None, None, None
+
+        for i in range(len(phases_per_element)):
+            # Create the labels
+            label_range = (last_label, last_label + phases_per_element[i] - 1)
+            last_label += phases_per_element[i]
+
+            # Create the data
+            edc = ElementDatasetCreator(label_range, element=phases_per_element.index[i], temp_range=temp_range,
+                                        measurement=measurement, seq_len=seq_len, splits=splits, validation=validation)
+            train, test, val = edc.get_data()
+
+            if train_data is None:
+                train_data = train
+            else:
+                train_data = np.vstack((train_data, train))
+            if test_data is None:
+                test_data = test
+            else:
+                test_data = np.vstack((test_data, test))
+            if validation:
+                if val_data is None:
+                    val_data = val
+                else:
+                    val_data = np.vstack((val_data, val))
 
         # Create the datasets
-        train_set = ClassificationDataset()
-        test_set = ClassificationDataset()
-        val_set = ClassificationDataset() if validation else None
+        self.train_set = ClassificationDataset()
+        self.test_set = ClassificationDataset()
+        self.val_set = ClassificationDataset() if validation else None
+
+        self.train_set.set_samples(train_data)
+        self.test_set.set_samples(test_data)
+        if self.val_set is not None:
+            self.val_set.set_samples(val_data)
+
+    def get_datasets(self):
+        return self.train_set, self.test_set, self.val_set
 
 
 class ClassificationDataset(Dataset):
@@ -72,6 +112,8 @@ class ClassificationDataset(Dataset):
         return self._samples[i]
 
     def __len__(self):
+        if self._samples is None:
+            return None
         return len(self._samples)
 
     def set_samples(self, samples):
@@ -111,19 +153,13 @@ class ElementDatasetCreator(object):
         super(ElementDatasetCreator, self).__init__()
 
         # Input checking
-        assert label_range[0] < label_range[1]
-        assert temp_range[0] < temp_range[1]
-        assert measurement in ['G', 'S', 'H', 'C']
-        if validation:
-            assert len(splits) == 2
-        else:
-            assert len(splits) == 3
-        assert np.array(splits) == 1
+        assert label_range[0] <= label_range[1]
 
         # Make inputs class attributes
         self.seq_len = seq_len
         self.splits = splits
         self.validation = validation
+        self.element = element
 
         # Set the properties to load
         gibbs = True if measurement == 'G' else False
@@ -142,7 +178,7 @@ class ElementDatasetCreator(object):
         self.data_remainder = len(self.data) % self.seq_len
 
         # Check if label length and number of phases match
-        assert (label_range[1] - label_range[0]) == len(self.data.columns) - 1
+        assert (label_range[1] - label_range[0] + 1) == len(self.data.columns) - 1
 
         # Create the data sets for all phases of the element. self.val_data is only not None, if validation is True
         self.train_data, self.test_data, self.val_data = self.create_batches(label_range[0], 1)
@@ -154,6 +190,9 @@ class ElementDatasetCreator(object):
 
             if self.validation:
                 self.val_data = np.vstack((self.val_data, val))
+
+    def get_data(self):
+        return self.train_data, self.test_data, self.val_data
 
     def create_batches(self, label, col_index):
         """
@@ -171,8 +210,9 @@ class ElementDatasetCreator(object):
         indices = np.array(list(range(len(self.data))))
         np.random.shuffle(indices)
 
-        # Drop the remainders
-        indices = indices[:-self.data_remainder]
+        # Drop the remainders if there are some
+        if self.data_remainder > 0:
+            indices = indices[:-self.data_remainder]
 
         # Extract the temperature and measurement
         phase_df = pd.DataFrame(self.data.iloc[:, [0, col_index]])
@@ -184,8 +224,8 @@ class ElementDatasetCreator(object):
         phase_data = np.array(phase_df.loc[indices]).reshape((-1, self.seq_len, 3))
 
         # Split the data
-        train_indices = int(len(indices) * self.splits[0])
-        test_indices = int(len(indices) * self.splits[1])
+        train_indices = int(len(phase_data) * self.splits[0])
+        test_indices = int(len(phase_data) * self.splits[1])
 
         train_data = phase_data[:train_indices]
         if not self.validation:
