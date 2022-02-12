@@ -146,7 +146,7 @@ class ElementDatasetCreator(object):
 		:param measurement: Defines for which properties the classification should be made. Must be one of 'G', 'S', 'H'
 		or 'C'.
 		:param seq_len: Sequence length (number of measurements made for one single phase in one measurement batch)
-		:param splits: percentage of the splits. (train set, test set, validation set). Validation set must only be
+		:param splits: percentage of the splits. (t set, test set, validation set). Validation set must only be
 		included if validation is True
 		:param validation: Whether or not a validation set should be created. In this case, splits must be of length 3
 		"""
@@ -183,10 +183,10 @@ class ElementDatasetCreator(object):
         # Create the data sets for all phases of the element. self.val_data is only not None, if validation is True
         self.train_data, self.test_data, self.val_data = self.create_batches(label_range[0], 1)
         for (l, c) in zip(range(label_range[0] + 1, label_range[1]), range(2, len(self.data.columns))):
-            train, test, val = self.create_batches(l, c)
+            tr, te, val = self.create_batches(l, c)
 
-            self.train_data = np.vstack((self.train_data, train))
-            self.test_data = np.vstack((self.test_data, test))
+            self.train_data = np.vstack((self.train_data, tr))
+            self.test_data = np.vstack((self.test_data, te))
 
             if self.validation:
                 self.val_data = np.vstack((self.val_data, val))
@@ -227,7 +227,7 @@ class ElementDatasetCreator(object):
         train_indices = int(len(phase_data) * self.splits[0])
         test_indices = int(len(phase_data) * self.splits[1])
 
-        train_data = phase_data[:train_indices]
+        train_data = phase_data[:train_indices][:-1]
         if not self.validation:
             test_data = phase_data[train_indices:]
             val_data = None
