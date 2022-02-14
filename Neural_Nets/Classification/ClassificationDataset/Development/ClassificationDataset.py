@@ -94,7 +94,7 @@ class DatasetCreator(object):
 
 class ClassificationDataset(Dataset):
     """
-	ClassificationDataset contains the data for training and testing the ThermoClassifier. It loads the SGTE data for
+	ClassificationDataset contains the data for training and testing the PhaseClassifier. It loads the SGTE data for
 	all elements and phases. It needs to be specified whether this dataset will be used
 	"""
 
@@ -182,7 +182,7 @@ class ElementDatasetCreator(object):
 
         # Create the data sets for all phases of the element. self.val_data is only not None, if validation is True
         self.train_data, self.test_data, self.val_data = self.create_batches(label_range[0], 1)
-        for (l, c) in zip(range(label_range[0] + 1, label_range[1]), range(2, len(self.data.columns))):
+        for (l, c) in zip(range(label_range[0] + 1, label_range[1] + 1), range(2, len(self.data.columns))):
             tr, te, val = self.create_batches(l, c)
 
             self.train_data = np.vstack((self.train_data, tr))
