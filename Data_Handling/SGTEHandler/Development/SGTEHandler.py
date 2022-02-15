@@ -10,6 +10,7 @@ class SGTEHandler(object):
     def __init__(self, element=None):
         super(SGTEHandler, self).__init__()
         self.data = None
+        self.measurements = None
         self.colors = ['royalblue', 'seagreen', 'slategrey', 'red', 'pink', 'orange', 'mintcream', 'lime', 'yellow']
         self.element = None
         self.elements = ['Ag', 'Al', 'Am', 'As', 'Au', 'B', 'Ba', 'Be', 'Bi', 'C', 'Ca', 'Cd', 'Ce', 'Co', 'Cr', 'Cs',
@@ -177,9 +178,8 @@ class SGTEHandler(object):
         self.evaluate_equations(start_temp, end_temp, p, gibbs=True, entropy=entropy, enthalpy=enthalpy,
                                 heat_capacity=heat_cap, plot=False, phases=['all'])
 
-        # Get the results and set the index to temperature
+        # Get the results
         data = self.equation_result_data
-        data.set_index('Temperature', inplace=True)
 
         # Extract the properties for the stable phase. If measurement is not the Gibbs energy, first the indices of
         # the minimum Gibbs energy have to be extracted so that afterwards the values at those indices can be chosen
@@ -189,17 +189,17 @@ class SGTEHandler(object):
             step = 1
 
         # Get the Gibbs energies from the data
-        gibbs_indices = list(range(0, len(data.columns), 1 + step))
+        gibbs_indices = list(range(1, len(data.columns), 1 + step))
         gibbs_energies = data.iloc[:, gibbs_indices]
 
         # Select the indices where the Gibbs energies are minimal and add 1 so that it matches with the index of
         # the same phase of the property which is to be selected
-        indices = np.argmin(gibbs_energies.values, axis=1) + step
+        indices = np.argmin(gibbs_energies.values, axis=1) * (1 + step) + 1 + step
 
         # Get the measurements from the properties where the respective phase is stable
-        measurements = data.values[np.arange(len(data)), indices]
-
-        return measurements
+        self.measurements = pd.DataFrame()
+        self.measurements['Temperature'] = data['Temperature']
+        self.measurements['Measurements'] = data.values[np.arange(len(data)), indices]
 
     def plot_data(self, equation_result, ax, prefix, phase, i):
         """

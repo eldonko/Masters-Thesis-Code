@@ -12,7 +12,7 @@ class DatasetCreator(object):
     """
 
     def __init__(self, element_phase_filename, temp_range=(200, 2000), measurement='G', seq_len=5, splits=(0.8, 0.2),
-                 validation=False, elements=None):
+                 validation=False, elements=None, stable_only=False):
         """
         Creates the DatasetCreator
 
@@ -28,6 +28,7 @@ class DatasetCreator(object):
 		:param validation: Whether or not a validation set should be created. In this case, splits must be of length 3
 		:param elements: Which elements to load, if None, load all elements, else pass list of strings with the elements
 		abbreviations (e.g. ['O', 'Fe'] if Oxygen and Iron should be loaded but nothing else)
+		:param stable_only: Defines whether only measurement values from stable phases should be loaded or not
         """
         super(DatasetCreator, self).__init__()
 
@@ -56,12 +57,17 @@ class DatasetCreator(object):
 
         for i in range(len(phases_per_element)):
             # Create the labels
-            label_range = (last_label, last_label + phases_per_element[i] - 1)
-            last_label += phases_per_element[i]
+            if not stable_only:
+                label_range = (last_label, last_label + phases_per_element[i] - 1)
+                last_label += phases_per_element[i]
+            else:
+                label_range = (last_label, last_label)
+                last_label += 1
 
             # Create the data
             edc = ElementDatasetCreator(label_range, element=phases_per_element.index[i], temp_range=temp_range,
-                                        measurement=measurement, seq_len=seq_len, splits=splits, validation=validation)
+                                        measurement=measurement, seq_len=seq_len, splits=splits, validation=validation,
+                                        stable_only=stable_only)
             train, test, val = edc.get_data()
 
             if train_data is None:
@@ -133,7 +139,7 @@ class ElementDatasetCreator(object):
 	"""
 
     def __init__(self, label_range, element, temp_range=(200, 2000), measurement='G', seq_len=5, splits=(0.8, 0.2),
-                 validation=False):
+                 validation=False, stable_only=False):
         """
 		Initializes the dataset
 
@@ -149,6 +155,7 @@ class ElementDatasetCreator(object):
 		:param splits: percentage of the splits. (t set, test set, validation set). Validation set must only be
 		included if validation is True
 		:param validation: Whether or not a validation set should be created. In this case, splits must be of length 3
+		:param stable_only: Defines whether only measurement values from stable phases should be loaded or not
 		"""
         super(ElementDatasetCreator, self).__init__()
 
@@ -167,14 +174,23 @@ class ElementDatasetCreator(object):
         enthalpy = True if measurement == 'H' else False
         heat_cap = True if measurement == 'C' else False
 
-        # Load the data
+        # Load the data based on whether data from any phase can be included or only from stable phases
         sgte_handler = SGTEHandler(element)
-        sgte_handler.evaluate_equations(temp_range[0], temp_range[1], 1e5, plot=False, phases=['all'],
-                                        gibbs=gibbs,
-                                        entropy=entropy,
-                                        enthalpy=enthalpy,
-                                        heat_capacity=heat_cap)
-        self.data = sgte_handler.equation_result_data
+        if not stable_only:
+            sgte_handler.evaluate_equations(temp_range[0], temp_range[1], 1e5, plot=False, phases=['all'],
+                                            gibbs=gibbs,
+                                            entropy=entropy,
+                                            enthalpy=enthalpy,
+                                            heat_capacity=heat_cap)
+            self.data = sgte_handler.equation_result_data
+        else:
+            print(measurement)
+            sgte_handler.get_stable_properties(temp_range[0], temp_range[1], measurement=measurement)
+            self.data = sgte_handler.measurements
+
+        print(element)
+        print(self.data)
+
         self.data_remainder = len(self.data) % self.seq_len
 
         # Check if label length and number of phases match
