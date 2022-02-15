@@ -151,6 +151,56 @@ class SGTEHandler(object):
             if heat_capacity:
                 ax_heat_capacity.legend()
 
+    def get_stable_properties(self, start_temp, end_temp, p=1e5, measurement='G'):
+        """
+        Solves the SGTE equations for the given element and all phases and returns only the properties in the stable
+        phases. This means, the Gibbs energy needs to be evaluated no matter which measurement is conducted, because
+        the stable with the minimum Gibbs energy at a certain temperature is the stable phase.
+
+        :param start_temp: Lower value of the temperature range
+        :param end_temp: Upper value of the temperature range
+        :param p: pressure
+        :param measurement: Measurement type/property for which the evaluation should be made. Must be one of 'G', 'S',
+        'H' or 'C'
+        :return:
+        """
+
+        # Input checking
+        assert measurement in ['G', 'S', 'H', 'C']
+
+        # Based on measurement decide which properties to evaluate. Only one of the three can be True
+        entropy = True if measurement == 'S' else False
+        enthalpy = True if measurement == 'H' else False
+        heat_cap = True if measurement == 'C' else False
+
+        # Evaluate the equations for the Gibbs energy and if selected another property
+        self.evaluate_equations(start_temp, end_temp, p, gibbs=True, entropy=entropy, enthalpy=enthalpy,
+                                heat_capacity=heat_cap, plot=False, phases=['all'])
+
+        # Get the results and set the index to temperature
+        data = self.equation_result_data
+        data.set_index('Temperature', inplace=True)
+
+        # Extract the properties for the stable phase. If measurement is not the Gibbs energy, first the indices of
+        # the minimum Gibbs energy have to be extracted so that afterwards the values at those indices can be chosen
+        # from the property
+        step = 0
+        if measurement != 'G':
+            step = 1
+
+        # Get the Gibbs energies from the data
+        gibbs_indices = list(range(0, len(data.columns), 1 + step))
+        gibbs_energies = data.iloc[:, gibbs_indices]
+
+        # Select the indices where the Gibbs energies are minimal and add 1 so that it matches with the index of
+        # the same phase of the property which is to be selected
+        indices = np.argmin(gibbs_energies.values, axis=1) + step
+
+        # Get the measurements from the properties where the respective phase is stable
+        measurements = data.values[np.arange(len(data)), indices]
+
+        return measurements
+
     def plot_data(self, equation_result, ax, prefix, phase, i):
         """
         Plots the data of the equation results
