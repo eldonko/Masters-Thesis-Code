@@ -1,7 +1,7 @@
 Metadata-Version: 2.1
-Name: SGTE
+Name: sgte
 Version: 0.1.0
-Summary: Converts the SGTE data coefficients stored in data into (temperature, value) pairs.
+Summary: Converts the sgte data coefficients stored in data into (temperature, value) pairs.
 Home-page: UNKNOWN
 Author: Daniel Schatzl
 Author-email: danielschatzl16@gmail.com

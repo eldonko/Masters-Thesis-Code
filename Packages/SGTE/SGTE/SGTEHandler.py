@@ -7,7 +7,7 @@ import pandas as pd
 
 class SGTEHandler(object):
     """
-    Converts the SGTE data coefficients stored in data into (temperature, value) pairs.
+    Converts the sgte data coefficients stored in data into (temperature, value) pairs.
     """
     def __init__(self, element=None):
         super(SGTEHandler, self).__init__()
@@ -30,12 +30,12 @@ class SGTEHandler(object):
 
     def set_element(self, element=None):
         """
-        Sets the element for which the SGTE equations should be evaluated
+        Sets the element for which the sgte equations should be evaluated
 
         Parameters
         ----------
         element : str
-            Element for which the SGTE equations should be evaluated. If None, user will be asked for input
+            Element for which the sgte equations should be evaluated. If None, user will be asked for input
             (Default value = None)
 
         Returns
@@ -58,12 +58,12 @@ class SGTEHandler(object):
 
     def set_phases(self, phases=None):
         """
-        Sets the phases for which the SGTE equations should be evaluated
+        Sets the phases for which the sgte equations should be evaluated
 
         Parameters
         ----------
         phases : list
-             Phases for which the SGTE equations should be evaluated. If None, user will be asked for input.
+             Phases for which the sgte equations should be evaluated. If None, user will be asked for input.
              (Default value = None)
 
         Returns
@@ -82,7 +82,7 @@ class SGTEHandler(object):
                 self.selected_phases = phases
             return
 
-        # Make phases reusable of SGTE is used multiple times
+        # Make phases reusable of sgte is used multiple times
         if len(self.selected_phases) > 0:
             print('To reuse phases from before, enter y. To reset phases, enter n.')
             keep = ''
@@ -123,7 +123,7 @@ class SGTEHandler(object):
         self.selected_phases = selected_phases
 
     def solve_equations(self, phase, p, temp, gibbs, entropy, enthalpy, heat_capacity):
-        """Evaluates the equations specified by Dinsdale (SGTE). For further reference see "SGTE Data for
+        """Evaluates the equations specified by Dinsdale (sgte). For further reference see "sgte Data for
         Pure Elements [Dinsdale]"
 
         Parameters
@@ -150,12 +150,12 @@ class SGTEHandler(object):
 
         """
 
-        # Get the SGTE coefficients from self.data
+        # Get the sgte coefficients from self.data
         data = self.data[self.data['Phase'] == phase].sort_values(by='Start temperature',
                                                                   ascending=True).reset_index(
             drop=True)
 
-        # Allow for temperature ranges which go over the intervals specified in SGTE data. For this, it is necessary to
+        # Allow for temperature ranges which go over the intervals specified in sgte data. For this, it is necessary to
         # split the temperature range in order to be able to compute the equations accordingly.
         temp_ranges = self.get_temp_ranges(data, temp)
 
@@ -300,7 +300,7 @@ class SGTEHandler(object):
                 if heat_capacity:
                     ax_heat_capacity = self.plot_data(equation_result, ax_heat_capacity, 'Cp(J/K)_', phase, i)
 
-            # Save the obtained data to the SGTE
+            # Save the obtained data to the sgte
             if self.equation_result_data is None:
                 self.equation_result_data = equation_result
             else:
@@ -318,7 +318,7 @@ class SGTEHandler(object):
                 ax_heat_capacity.legend()
 
     def get_stable_properties(self, start_temp, end_temp, p=1e5, measurement='G'):
-        """Solves the SGTE equations for the given element and all phases and returns only the properties in the stable
+        """Solves the sgte equations for the given element and all phases and returns only the properties in the stable
         phases. This means, the Gibbs energy needs to be evaluated no matter which measurement is conducted, because
         the stable with the minimum Gibbs energy at a certain temperature is the stable phase.
 
@@ -380,7 +380,7 @@ class SGTEHandler(object):
         Parameters
         ----------
         equation_result : pd.DataFrame
-            results of the SGTE equation evaluation
+            results of the sgte equation evaluation
         ax : matplotlib.pyplot ax
             the axis to plot to
         prefix : str
@@ -410,7 +410,7 @@ class SGTEHandler(object):
         Parameters
         ----------
         input_file : str
-            Excel file path which contains SGTE Data
+            Excel file path which contains sgte Data
 
         Returns
         -------
@@ -490,7 +490,7 @@ class SGTEHandler(object):
         Returns
         -------
         np.ndarray
-            gpres term of SGTE equation
+            gpres term of sgte equation
 
         """
 
@@ -525,7 +525,7 @@ class SGTEHandler(object):
         Returns
         -------
         np.ndarray
-            gmag term of SGTE equations
+            gmag term of sgte equations
 
         """
 
@@ -570,7 +570,7 @@ class SGTEHandler(object):
         Returns
         -------
         np.ndarray
-            spres term of SGTE equations
+            spres term of sgte equations
 
         """
 
@@ -594,7 +594,7 @@ class SGTEHandler(object):
         Returns
         -------
         np.ndarray
-            smag term of SGTE equations
+            smag term of sgte equations
 
         """
 
@@ -639,7 +639,7 @@ class SGTEHandler(object):
         Returns
         -------
         np.ndarray
-            hpres term of SGTE equations
+            hpres term of sgte equations
 
         """
 
@@ -663,7 +663,7 @@ class SGTEHandler(object):
         Returns
         -------
         np.ndarray
-            hmag term of SGTE equations
+            hmag term of sgte equations
 
         """
 
@@ -708,7 +708,7 @@ class SGTEHandler(object):
         Returns
         -------
         np.ndarray
-            cpres term of SGTE equations
+            cpres term of sgte equations
 
         """
 
@@ -732,7 +732,7 @@ class SGTEHandler(object):
         Returns
         -------
         np.ndarray
-            cmag term of SGTE equations
+            cmag term of sgte equations
 
         """
 

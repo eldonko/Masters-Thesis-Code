@@ -1,1 +1,1 @@
-from SGTE import *
+from sgte import *

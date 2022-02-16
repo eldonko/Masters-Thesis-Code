@@ -8,7 +8,7 @@ setuptools.setup(
     description="Classifies thermodynamic measurement data of the properties Gibbs energy, entropy, enthalpy or heat-"
                 "capacity into the element and phases the measurements have been taken from.",
     packages=setuptools.find_packages(),
-    install_requires=['numpy', 'pandas', 'torch', 'SGTE'],
+    install_requires=['numpy', 'pandas', 'torch', 'sgte'],
     classifiers=[
         'Programming Language :: Python',
         'Programming Language :: Python :: 3',

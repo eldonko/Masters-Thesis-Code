@@ -9,7 +9,7 @@ from .element_dataset_creator import ElementDatasetCreator
 
 class DatasetCreator(object):
     """
-    DatasetCreator loads the data for all element and phases from the SGTE data and creates the train, test and
+    DatasetCreator loads the data for all element and phases from the sgte data and creates the train, test and
     optionally the validation dataset. The datasets will be of type torch.utils.data.Dataset.
     """
 

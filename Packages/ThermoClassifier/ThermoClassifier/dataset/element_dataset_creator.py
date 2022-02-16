@@ -1,12 +1,12 @@
 import numpy as np
 import pandas as pd
 
-from SGTE.SGTEHandler import SGTEHandler
+from sgte.SGTEHandler import SGTEHandler
 
 
 class ElementDatasetCreator(object):
     """
-    ElementDatasetCreator loads the data for all phases of an element from the SGTE data. The dataset will be used
+    ElementDatasetCreator loads the data for all phases of an element from the sgte data. The dataset will be used
     by dataset to create the training, testing and optionally the validation dataset.
 
     """
@@ -93,7 +93,7 @@ class ElementDatasetCreator(object):
         """
         For each phase of an element, batches of length self.seq_len containing (temperature, measurement, label) tuples
         are created. Only full size batches are accepted. This means, that if the length of the data loaded from the
-        SGTE dataset can not be divided by self.seq_len without a remainder, remainder number of elements shall are
+        sgte dataset can not be divided by self.seq_len without a remainder, remainder number of elements shall are
         dropped from the dataset.
 
         Parameters

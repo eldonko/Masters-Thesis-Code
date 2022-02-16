@@ -9,3 +9,10 @@ SGTE.egg-info/SOURCES.txt
 SGTE.egg-info/dependency_links.txt
 SGTE.egg-info/requires.txt
 SGTE.egg-info/top_level.txt
+sgte/SGTEHandler.py
+sgte/__init__.py
+sgte.egg-info/PKG-INFO
+sgte.egg-info/SOURCES.txt
+sgte.egg-info/dependency_links.txt
+sgte.egg-info/requires.txt
+sgte.egg-info/top_level.txt

@@ -5,7 +5,7 @@ from Neural_Nets.ThermoDataset.Development.ThermoDataset import ThermoDataset
 from Neural_Nets.ThermoDatasetModified.Development.ThermoDatasetModified import ThermoDatasetModified
 
 
-class PlotHandler:
+class PlotHandler(object):
 	"""
 	PlotHandler handles the plotting of different data
 	"""
