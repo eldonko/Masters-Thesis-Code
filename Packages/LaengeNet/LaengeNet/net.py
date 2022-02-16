@@ -1,13 +1,33 @@
 import torch
 import torch.nn as nn
 from torch.nn import Linear
-from Neural_Nets.ThermoNetActFuncs.Development.ThermoNetActFuncs import ChenSundman, Softplus
+from .act import ChenSundman, Softplus
 
 
 class LaengeNet(nn.Module):
     """
     LaengeNet is aiming to rebuild the network for approximating thermodynamic properties proposed in "An artificial
     neural network model for the unary description of pure iron" [Länge, M.] https://doi.org/10.1007/s00500-019-04663-3
+
+    Parameters
+    ----------
+    hidden_dim_sub_net_2 : int
+        hidden dimension of sub network 2 (Default value = 16)
+    initialize : bool
+        if the network parameters should be initialized using an initialization function provided by an input (Default
+        value = True)
+    init_func: nn.init function
+        initialization function to initialize the network parameters with (Default value = nn.init.uniform_)
+    init_args : tuple or None
+        arguments passed to the initialization function. Depends on the initialization function. (Default value = None)
+    act_1 : activation function
+        activation function for hidden layer of sub network 1
+    act_2 : activation function
+        activation function for hidden layer of sub network 2
+
+    Returns
+    -------
+
     """
     def __init__(self, hidden_dim_sub_net_2=16, initialize=True, init_func=nn.init.uniform_, init_args=None,
                  act_1=ChenSundman(), act_2=Softplus()):
@@ -17,6 +37,20 @@ class LaengeNet(nn.Module):
         self.sub_net_2 = SubNet(act_2, hidden_dim_sub_net_2, initialize, init_func, init_args)
 
     def forward(self, *args, debug=False):
+        """
+
+        Parameters
+        ----------
+        *args :
+            temperature input for the network
+            
+        debug : bool
+            prints debug values if True (Default value = False)
+
+        Returns
+        -------
+
+        """
         if len(args) == 1:
             gibbs_1 = self.sub_net_1(*args, debug)
             gibbs_2 = self.sub_net_2(*args, debug)
@@ -30,6 +64,23 @@ class LaengeNet(nn.Module):
 
 
 class SubNet(nn.Module):
+    """
+    Sub network as defined in Länge
+
+    Parameters
+    ----------
+    activation : activation function
+        activation function for the hidden layer
+    hidden_dim : int
+        number of nodes in the hidden layer
+    initialize : bool
+        if the network parameters should be initialized using an initialization function provided by an input (Default
+        value = True)
+    init_func: nn.init function
+        initialization function to initialize the network parameters with (Default value = nn.init.uniform_)
+    init_args : tuple or None
+        arguments passed to the initialization function. Depends on the initialization function. (Default value = None)
+    """
     def __init__(self, activation, hidden_dim, initialize=True, init_func=nn.init.uniform_, init_args=None):
         super(SubNet, self).__init__()
 
@@ -56,6 +107,20 @@ class SubNet(nn.Module):
             return self.gibbs(temp[0]), self.entropy(temp[1]), self.enthalpy(temp[2]), self.heat_capacity(temp[3])
 
     def _initialize_parameters(self, init_func, *args):
+        """
+
+        Parameters
+        ----------
+        init_func : torch.nn.init function
+            
+        *args :
+            arguments to initialize the network parameters with. Depends on the initialization function
+            
+
+        Returns
+        -------
+
+        """
         # Initialize parameters
         if init_func == nn.init.uniform_:
             low = min(args[0])
@@ -70,11 +135,18 @@ class SubNet(nn.Module):
             init_func(self.layer_2.weight)
 
     def gibbs(self, xg):
-        """
-        Forward pass of the network to approximate the Gibbs energy
+        """Forward pass of the network to approximate the Gibbs energy
 
-        :param xg: Temperature value (torch.Tensor)
-        :return: Gibbs energy (torch.Tensor)
+        Parameters
+        ----------
+        xg : torch.tensor [batch_size, 1]
+            Temperature values
+
+        Returns
+        -------
+        torch.tensor [batch_size, 1]
+            Gibbs energy
+
         """
 
         s = self.layer_1(xg.float())
@@ -94,11 +166,18 @@ class SubNet(nn.Module):
         return gibbs
 
     def entropy(self, xs):
-        """
-        Forward pass of the network to approximate the entropy
+        """Forward pass of the network to approximate the entropy
 
-        :param xs: Temperature value (torch.Tensor)
-        :return: entropy (torch.Tensor)
+        Parameters
+        ----------
+        xs : torch.tensor [batch_size, 1]
+            Temperature values
+
+        Returns
+        -------
+        torch.tensor [batch_size, 1]
+            entropy
+
         """
 
         s = self.layer_1(xs.float())
@@ -109,21 +188,35 @@ class SubNet(nn.Module):
         return entropy
 
     def enthalpy(self, xh):
-        """
-        Forward pass of the network to approximate the enthalpy
+        """Forward pass of the network to approximate the enthalpy
 
-        :param xh: Temperature value (torch.Tensor)
-        :return: enthalpy (torch.Tensor)
+        Parameters
+        ----------
+        xh : torch.tensor [batch_size, 1]
+            Temperature values
+
+        Returns
+        -------
+        torch.tensor [batch_size, 1]
+            enthalpy
+
         """
 
         return self.gibbs(xh) + xh * self.entropy(xh)
 
     def heat_capacity(self, xc):
-        """
-        Forward pass of the network to approximate the heat capacity
+        """Forward pass of the network to approximate the heat capacity
 
-        :param xc: Temperature value (torch.Tensor)
-        :return: heat capacity (torch.Tensor)
+        Parameters
+        ----------
+        xc : torch.tensor [batch_size, 1]
+            Temperature values
+
+        Returns
+        -------
+        torch.tensor [batch_size, 1]
+            heat capacity
+
         """
 
         s = self.layer_1(xc.float())
@@ -141,9 +234,7 @@ class SubNet(nn.Module):
 
 
 class LaengeNetLossFunc(nn.Module):
-    """
-    Loss function for the LaengeNet as defined in Länge
-    """
+    """Loss function for the LaengeNet as defined in Länge"""
     def __init__(self, weights=None):
         """
         :param weights: weights of the loss in case the loss is calculated on all 4 properties
@@ -176,16 +267,32 @@ class LaengeNetLossFunc(nn.Module):
     def loss(self, g_p, g_t, s_p, s_t, h_p, h_t, c_p, c_t, debug=False):
         """
 
-        :param g_p: Predicted Gibbs energy
-        :param g_t: True Gibbs energy
-        :param s_p: Predicted entropy
-        :param s_t: True entropy
-        :param h_p: Predicted enthalpy
-        :param h_t: True enthalpy
-        :param c_p: Predicted heat capacity
-        :param c_t: True heat capacity
-        :param debug:
-        :return: loss
+        Parameters
+        ----------
+        g_p : torch.tensor
+            Predicted Gibbs energy
+        g_t : torch.tensor
+            True Gibbs energy
+        s_p : torch.tensor
+            Predicted entropy
+        s_t : torch.tensor
+            True entropy
+        h_p : torch.tensor
+            Predicted enthalpy
+        h_t : torch.tensor
+            True enthalpy
+        c_p : torch.tensor
+            Predicted heat capacity
+        c_t : torch.tensor
+            True heat capacity
+        debug : bool
+            (Default value = False)
+
+        Returns
+        -------
+        torch.tensor
+            loss
+
         """
 
         # Get losses for each property

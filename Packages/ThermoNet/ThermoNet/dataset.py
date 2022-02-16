@@ -15,11 +15,11 @@ class ThermoDataset(Dataset):
     phase : str
         phase of the element for which the dataset is created
     start_temp : int
-        lower value of temperature range
+        lower value of temperature range (Default value = 200)
     end_temp : int
-        upper value of temperature range
+        upper value of temperature range (Default value = 2000)
     step : float
-        step size of the SGTEHandler to create the data. The smaller step, the larger the dataset
+        step size of the SGTEHandler to create the data. The smaller step, the larger the dataset (Default value = 1.)
     """
     def __init__(self, element, phase, start_temp=200, end_temp=2000, step=1.):
         super(ThermoDataset, self).__init__()
