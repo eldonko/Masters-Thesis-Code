@@ -1,28 +1,29 @@
 import torch
 import torch.nn as nn
 from torch.nn import Linear, ReLU, Softmax, LSTM, Sequential, BatchNorm1d, Tanh
+from torch.nn.functional import pad
 import pandas as pd
 import os
+import warnings
 
 
-class PhaseClassifier(nn.Module):
+class ElementClassifier(nn.Module):
     """
 	PhaseClassifier classifies thermodynamic measurement data in the sense that given measurement data for the
-	Gibbs energy, entropy, enthalpy or the heat capacity at certain temperatures, it is able to tell which phase of
-	a GIVEN element this measurement data belongs to.
+	Gibbs energy, entropy, enthalpy or the heat capacity at certain temperatures, it is able to tell which  element
+	this measurement data belongs to.
+
+	Version: Input padding to maximum 10 measurements
 	"""
 
-    def __init__(self, element, train=False, measurement='G', element_data_path=None, models_path=None):
+    def __init__(self, train=False, measurement='G', element_data_path=None, models_path=None):
         """
-		input_size: 2, (temperature, measurement)
-
-		:param element: Which element the measurements are from (and the phase should be predicted for)
 		:param train: If train is True, a network with random weights is generated and trained, if train is False, an
 		already trained network for this element and measurement type will be loaded.
 		:param measurement: Defines for which properties the classification should be made. Must be one of 'G', 'S', 'H'
 		or 'C'.
 		"""
-        super(PhaseClassifier, self).__init__()
+        super(ElementClassifier, self).__init__()
 
         # Input checking
         if element_data_path is None:
@@ -32,29 +33,26 @@ class PhaseClassifier(nn.Module):
 
         if models_path is None:
             self.models_path = r"C:\Users\danie\Documents\Montanuni\Masterarbeit\5_Programmcodes\Neural_Nets" \
-                          r"\Classification\PhaseClassifier\Models"
+                          r"\Classification\ElementClassifier\Models"
         else:
             self.models_path = models_path
 
         self.element_data = None
         self.load_element_data()  # Load element data
-        assert element in self.element_data.columns.values
         assert measurement in ['G', 'S', 'H', 'C']
 
-        self.element = element
         self.measurement = measurement
 
         # Fully connected net for classification
-        self.num_classes = self.element_data[element].sum()
-        self.in_features = 2
-        self.hidden_size_linear = 32
+        self.num_classes = len(self.element_data.columns)
+        self.in_features = 20
+        self.hidden_size_linear = 128
 
         # For training, create a new network, else load a pre-trained network
-        if train or (not train and not os.path.exists(os.path.join(self.models_path, element + '_' + measurement))):
+        if train or (not train and not os.path.exists(os.path.join(self.models_path, 'ElementClassifier'))):
             # Error handling
-            if not train and not os.path.exists(os.path.join(self.models_path, element + '_' + measurement)):
-                print('New network had to be initialized as no network exists for this element and measurement. '
-                      'Training necessary!')
+            if not train and not os.path.exists(os.path.join(self.models_path, 'ElementClassifier')):
+                print('New network had to be initialized as no network exists yet. Training necessary!')
 
             self.fc = Sequential(
                 Linear(self.in_features, self.hidden_size_linear),
@@ -76,6 +74,40 @@ class PhaseClassifier(nn.Module):
             self.load_network()
 
     def forward(self, x):
+        """
+        Forward pass of the network
+        :param x: network input. Should be a torch.tensor of shape (batch_size, n, 2) where n is the number of
+        measurements. If n is smaller than max_num_measurements, the tensor will be padded with 0 so that the tensor
+        has a shape of (batch_size, max_num_measurements, 2). In case n is greater than max_num_measurements,  all the
+        inputs with an index above max_num_measurements will not be considered for the input.
+        :return:
+        """
+
+        # Maximum number of measurements
+        max_num_measurements = 10
+
+        # Input checking
+        if not len(x.shape) == 3:
+            raise ValueError('The network input must be a torch.tensor of shape (batch_size, n, 2), where n is an '
+                             'arbitrary number smaller or equal 10. The tensor you provided has shape ', x.shape)
+
+        if x.shape[2] != 2:
+            raise ValueError('The network input must be a torch.tensor of shape (batch_size, n, 2), where n is an '
+                             'arbitrary number smaller or equal 10. The tensor you provided has shape ', x.shape)
+
+        if x.shape[1] > max_num_measurements:
+            warnings.warn('The second dimension of the input tensor should not be greater than 10. The entries with '
+                          'index equal or greater than 10 will be left out!')
+            x = x[:, :max_num_measurements]
+
+        # If the second dimension of the input (=number of measurements) is smaller than 10, pad the tensor with 0 after
+        # the measurements
+        if x.shape[1] < max_num_measurements:
+            num_pad = max_num_measurements - x.shape[1]
+            p2d = (0, 0, 0, num_pad)  # pad last dim by (0, 0) and 2nd to last by (0, num_pad)
+            x = pad(x, p2d, 'constant', 0)
+
+        x = torch.flatten(x, start_dim=1)
         return self.fc(x)
 
     def load_element_data(self):

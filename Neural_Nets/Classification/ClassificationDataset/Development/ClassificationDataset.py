@@ -184,12 +184,8 @@ class ElementDatasetCreator(object):
                                             heat_capacity=heat_cap)
             self.data = sgte_handler.equation_result_data
         else:
-            print(measurement)
             sgte_handler.get_stable_properties(temp_range[0], temp_range[1], measurement=measurement)
             self.data = sgte_handler.measurements
-
-        print(element)
-        print(self.data)
 
         self.data_remainder = len(self.data) % self.seq_len
 
