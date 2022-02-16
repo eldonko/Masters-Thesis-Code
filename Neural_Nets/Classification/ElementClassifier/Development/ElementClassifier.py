@@ -1,20 +1,27 @@
+import os
+import warnings
+
 import torch
 import torch.nn as nn
 from torch.nn import Linear, ReLU, Softmax, LSTM, Sequential, BatchNorm1d, Tanh
 from torch.nn.functional import pad
 import pandas as pd
-import os
-import warnings
 
 
 class ElementClassifier(nn.Module):
-    """
-	PhaseClassifier classifies thermodynamic measurement data in the sense that given measurement data for the
-	Gibbs energy, entropy, enthalpy or the heat capacity at certain temperatures, it is able to tell which  element
-	this measurement data belongs to.
+    """PhaseClassifier classifies thermodynamic measurement data in the sense that given measurement data for the
+    	Gibbs energy, entropy, enthalpy or the heat capacity at certain temperatures, it is able to tell which  element
+    	this measurement data belongs to.
+    
+    	Version: Input padding to maximum 10 measurements
 
-	Version: Input padding to maximum 10 measurements
-	"""
+    Parameters
+    ----------
+
+    Returns
+    -------
+
+    """
 
     def __init__(self, train=False, measurement='G', element_data_path=None, models_path=None):
         """
@@ -65,6 +72,17 @@ class ElementClassifier(nn.Module):
             )
 
             def init_weights(m):
+                """
+
+                Parameters
+                ----------
+                m :
+                    
+
+                Returns
+                -------
+
+                """
                 if isinstance(m, nn.Linear):
                     torch.nn.init.xavier_normal_(m.weight)
                     m.bias.data.fill_(0.01)
@@ -74,13 +92,19 @@ class ElementClassifier(nn.Module):
             self.load_network()
 
     def forward(self, x):
-        """
-        Forward pass of the network
-        :param x: network input. Should be a torch.tensor of shape (batch_size, n, 2) where n is the number of
-        measurements. If n is smaller than max_num_measurements, the tensor will be padded with 0 so that the tensor
-        has a shape of (batch_size, max_num_measurements, 2). In case n is greater than max_num_measurements,  all the
-        inputs with an index above max_num_measurements will not be considered for the input.
-        :return:
+        """Forward pass of the network
+
+        Parameters
+        ----------
+        x :
+            network input. Should be a torch.tensor of shape (batch_size, n, 2) where n is the number of
+            measurements. If n is smaller than max_num_measurements, the tensor will be padded with 0 so that the tensor
+            has a shape of (batch_size, max_num_measurements, 2). In case n is greater than max_num_measurements,  all the
+            inputs with an index above max_num_measurements will not be considered for the input.
+
+        Returns
+        -------
+
         """
 
         # Maximum number of measurements
@@ -111,15 +135,12 @@ class ElementClassifier(nn.Module):
         return self.fc(x)
 
     def load_element_data(self):
-        """
-        Loads the element data from the excel sheet provided at self.element_data_path
-        """
+        """Loads the element data from the excel sheet provided at self.element_data_path"""
 
         self.element_data = pd.read_excel(self.element_data_path, sheet_name='Phases', index_col='Index')
 
     def load_network(self):
-        """
-        Change the path where already trained models are stored. Needs to be a directory
-        """
+        """Change the path where already trained models are stored. Needs to be a directory"""
         model_name = self.element + '_' + self.measurement  # e.g., Fe_G
         self.fc = torch.load(os.path.join(self.models_path, model_name))
+

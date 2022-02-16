@@ -1,0 +1,11 @@
+LICENSE
+MANIFEST.in
+README.md
+setup.py
+SGTE/SGTEHandler.py
+SGTE/__init__.py
+SGTE.egg-info/PKG-INFO
+SGTE.egg-info/SOURCES.txt
+SGTE.egg-info/dependency_links.txt
+SGTE.egg-info/requires.txt
+SGTE.egg-info/top_level.txt

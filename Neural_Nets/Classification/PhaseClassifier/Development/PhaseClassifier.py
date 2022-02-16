@@ -1,8 +1,9 @@
+import os
+
 import torch
 import torch.nn as nn
 from torch.nn import Linear, ReLU, Softmax, LSTM, Sequential, BatchNorm1d, Tanh
 import pandas as pd
-import os
 
 
 class PhaseClassifier(nn.Module):
