@@ -1,0 +1,4 @@
+torch
+ThermoNet
+pandas
+PyPDF2

@@ -1,7 +1,7 @@
 import torch
 from torch.utils.data import Dataset
 
-from sgte.SGTEHandler import SGTEHandler
+from sgte.handler import SGTEHandler
 
 
 class LaengeDataset(Dataset):

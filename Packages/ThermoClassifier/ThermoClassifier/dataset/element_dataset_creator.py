@@ -1,7 +1,7 @@
 import numpy as np
 import pandas as pd
 
-from sgte.SGTEHandler import SGTEHandler
+from sgte.handler import SGTEHandler
 
 
 class ElementDatasetCreator(object):
