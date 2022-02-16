@@ -1,0 +1,16 @@
+Metadata-Version: 2.1
+Name: ThermoClassifier
+Version: 0.1.0
+Summary: Classifies thermodynamic measurement data of the properties Gibbs energy, entropy, enthalpy or heat-capacity into the element and phases the measurements have been taken from.
+Home-page: UNKNOWN
+Author: Daniel Schatzl
+Author-email: danielschatzl16@gmail.com
+License: UNKNOWN
+Platform: UNKNOWN
+Classifier: Programming Language :: Python
+Classifier: Programming Language :: Python :: 3
+Classifier: Programming Language :: Python :: 3.6
+License-File: LICENSE
+
+UNKNOWN
+

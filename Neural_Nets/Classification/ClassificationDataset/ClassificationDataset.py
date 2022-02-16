@@ -1,15 +1,17 @@
+import pkg_resources
+
 import torch
 from torch.utils.data import Dataset
 import numpy as np
 import pandas as pd
 
-from Data_Handling.SGTEHandler.Development.SGTEHandler import SGTEHandler
+from SGTE.SGTEHandler import SGTEHandler
 
 
 class DatasetCreator(object):
-    """
-    DataCreator loads the data for all element and phases from the SGTE data and creates the train, test and optionally
-    the validation dataset. The datasets will be of type torch.utils.data.Dataset.
+    """DataCreator loads the data for all element and phases from the SGTE data and creates the train, test and
+    optionally the validation dataset. The datasets will be of type torch.utils.data.Dataset.
+
     """
 
     def __init__(self, element_phase_filename, temp_range=(200, 2000), measurement='G', seq_len=5, splits=(0.8, 0.2),
@@ -17,7 +19,9 @@ class DatasetCreator(object):
         """
         Creates the DatasetCreator
 
-        :param element_phase_filename: specifies where the excel worksheet including the element and phase data is
+        Parameters
+        ----------
+        element_phase_filename: specifies where the excel worksheet including the element and phase data is
         located. The notebook should contain a matrix
         :param temp_range: the temperature range for which the data should be loaded. Passed as tuple
 		(low_temp, high_temp)
@@ -96,14 +100,22 @@ class DatasetCreator(object):
             self.val_set.set_samples(val_data)
 
     def get_datasets(self):
+        """ """
         return self.train_set, self.test_set, self.val_set
 
 
 class ClassificationDataset(Dataset):
     """
-	ClassificationDataset contains the data for training and testing the PhaseClassifier. It loads the SGTE data for
-	all elements and phases. It needs to be specified whether this dataset will be used
-	"""
+    ClassificationDataset contains the data for training and testing the PhaseClassifier. It loads the SGTE data for
+    all elements and phases. It needs to be specified whether this dataset will be used
+
+    Parameters
+    ----------
+
+    Returns
+    -------
+
+    """
 
     def __init__(self):
         """
@@ -124,20 +136,31 @@ class ClassificationDataset(Dataset):
         return len(self._samples)
 
     def set_samples(self, samples):
-        """
-        Sets the data of the Dataset self._samples to samples
+        """Sets the data of the Dataset self._samples to samples
 
-        :param samples: data which the dataset should contain
-        :return:
+        Parameters
+        ----------
+        samples :
+            data which the dataset should contain
+
+        Returns
+        -------
+
         """
         self._samples = samples
 
 
 class ElementDatasetCreator(object):
+    """ElementDataset contains the data for all phases of an element loaded from the SGTE data. The dataset will be used
+    	by ClassificationDataset to create the training, testing and optionally the validation data.
+
+    Parameters
+    ----------
+
+    Returns
+    -------
+
     """
-	ElementDataset contains the data for all phases of an element loaded from the SGTE data. The dataset will be used
-	by ClassificationDataset to create the training, testing and optionally the validation data.
-	"""
 
     def __init__(self, label_range, element, temp_range=(200, 2000), measurement='G', seq_len=5, splits=(0.8, 0.2),
                  validation=False, stable_only=False):
@@ -205,18 +228,25 @@ class ElementDatasetCreator(object):
                 self.val_data = np.vstack((self.val_data, val))
 
     def get_data(self):
+        """ """
         return self.train_data, self.test_data, self.val_data
 
     def create_batches(self, label, col_index):
-        """
-        For each phase of an element, batches of length self.seq_len containing (temperature, measurement, label) tuples
+        """For each phase of an element, batches of length self.seq_len containing (temperature, measurement, label) tuples
         are created. Only full size batches are accepted. This means, that if the length of the data loaded from the
         SGTE dataset can not be divided by self.seq_len without a remainder, remainder number of elements shall are
         dropped from the dataset.
 
-        :param label: label for the data
-        :param col_index: index of the column the data for the phases is in self.data
-        :return:
+        Parameters
+        ----------
+        label :
+            label for the data
+        col_index :
+            index of the column the data for the phases is in self.data
+
+        Returns
+        -------
+
         """
 
         # Create the indices and shuffle them
