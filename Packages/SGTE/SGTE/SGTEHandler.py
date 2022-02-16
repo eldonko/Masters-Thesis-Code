@@ -266,7 +266,7 @@ class SGTEHandler(object):
             if True, results are plotted (Default value = True)
         phases : list
             phases to be evaluated as list of strings or None (Default value = None)
-        step : int
+        step : float
             step size of temperature range. Determines the amount of data created. The smaller the step size, the more
             data is created. (Default value = 1)
 

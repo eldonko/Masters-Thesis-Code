@@ -8,11 +8,11 @@ ThermoClassifier.egg-info/SOURCES.txt
 ThermoClassifier.egg-info/dependency_links.txt
 ThermoClassifier.egg-info/requires.txt
 ThermoClassifier.egg-info/top_level.txt
-ThermoClassifier/ClassificationDataset/ClassificationDataset.py
-ThermoClassifier/ClassificationDataset/DatasetCreator.py
-ThermoClassifier/ClassificationDataset/ElementDatasetCreator.py
 ThermoClassifier/ClassificationDataset/__init__.py
-ThermoClassifier/ElementClassifier/ElementClassifier.py
+ThermoClassifier/ClassificationDataset/dataset.py
+ThermoClassifier/ClassificationDataset/dataset_creator.py
+ThermoClassifier/ClassificationDataset/element_dataset_creator.py
 ThermoClassifier/ElementClassifier/__init__.py
-ThermoClassifier/PhaseClassifier/PhaseClassifier.py
+ThermoClassifier/ElementClassifier/net.py
 ThermoClassifier/PhaseClassifier/__init__.py
+ThermoClassifier/PhaseClassifier/net.py
