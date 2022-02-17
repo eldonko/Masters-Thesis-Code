@@ -6,6 +6,8 @@ import torch.nn as nn
 from torch.nn import Linear, ReLU, Softmax, LSTM, Sequential, BatchNorm1d, Tanh
 import pandas as pd
 
+from ..exceptions import except_test_mode
+
 
 class PhaseClassifier(nn.Module):
     """
@@ -34,6 +36,8 @@ class PhaseClassifier(nn.Module):
         # Input checking
         assert measurement in ['G', 'S', 'H', 'C']
         self.measurement = measurement
+
+        self.train = train
 
         # File paths
         self.element_data_path = r'../data/Phases.xlsx'
@@ -115,4 +119,30 @@ class PhaseClassifier(nn.Module):
         stream = pkg_resources.resource_stream(__name__, model_name)
         self.fc = torch.load(stream)
 
-        print(self.fc)
+    def save_network(self, test_loader):
+        """
+        Saves the network to ./models. If a model already exists in ./models, a test will be conducted on a test set,
+        whereas the network with the better accuracy will survive and the other will be thrown away.
+
+        The statistics file will be updated accordingly
+
+        Parameters
+        ----------
+        test_loader : torch.utils.data.DataLoader
+            DataLoader which will be used to test the two networks against each other
+
+        Returns
+        -------
+
+        """
+
+        # Saving is only possible in training mode
+        if not self.train:
+            except_test_mode()
+            return
+
+        # Check if network already exists
+        model_name = self.models_path + 'H_G'  # e.g., Fe_G
+        stream = pkg_resources.resource_stream(__name__, model_name)
+
+        print(stream)

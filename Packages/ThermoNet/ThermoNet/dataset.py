@@ -6,7 +6,7 @@ from sgte.handler import SGTEHandler
 
 class ThermoDataset(Dataset):
     """
-    The dataset for training and testing the ThermoNet
+    The dataset for training and testing the thermonet
 
     Parameters
     ----------

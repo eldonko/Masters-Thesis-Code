@@ -6,7 +6,7 @@ from .act import ChenSundman, Softplus
 
 class LaengeNet(nn.Module):
     """
-    LaengeNet is aiming to rebuild the network for approximating thermodynamic properties proposed in "An artificial
+    laenge is aiming to rebuild the network for approximating thermodynamic properties proposed in "An artificial
     neural network model for the unary description of pure iron" [Länge, M.] https://doi.org/10.1007/s00500-019-04663-3
 
     Parameters
@@ -234,7 +234,7 @@ class SubNet(nn.Module):
 
 
 class LaengeNetLossFunc(nn.Module):
-    """Loss function for the LaengeNet as defined in Länge"""
+    """Loss function for the laenge as defined in Länge"""
     def __init__(self, weights=None):
         """
         :param weights: weights of the loss in case the loss is calculated on all 4 properties

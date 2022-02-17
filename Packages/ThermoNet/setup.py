@@ -1,7 +1,7 @@
 import setuptools
 
 setuptools.setup(
-    name="ThermoNet",
+    name="thermonet",
     version="0.1.0",
     author="Daniel Schatzl",
     author_email="danielschatzl16@gmail.com",
