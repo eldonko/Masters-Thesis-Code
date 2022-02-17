@@ -3,6 +3,7 @@ MANIFEST.in
 README.md
 setup.py
 ThermoClassifier/__init__.py
+ThermoClassifier/exceptions.py
 ThermoClassifier.egg-info/PKG-INFO
 ThermoClassifier.egg-info/SOURCES.txt
 ThermoClassifier.egg-info/dependency_links.txt
@@ -16,3 +17,8 @@ ThermoClassifier/elements/__init__.py
 ThermoClassifier/elements/net.py
 ThermoClassifier/phases/__init__.py
 ThermoClassifier/phases/net.py
+thermoclassifier.egg-info/PKG-INFO
+thermoclassifier.egg-info/SOURCES.txt
+thermoclassifier.egg-info/dependency_links.txt
+thermoclassifier.egg-info/requires.txt
+thermoclassifier.egg-info/top_level.txt

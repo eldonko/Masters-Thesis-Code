@@ -1,5 +1,5 @@
 Metadata-Version: 2.1
-Name: ThermoClassifier
+Name: thermoclassifier
 Version: 0.1.0
 Summary: Classifies thermodynamic measurement data of the properties Gibbs energy, entropy, enthalpy or heat-capacity into the element and phases the measurements have been taken from.
 Home-page: UNKNOWN

@@ -1,6 +1,6 @@
 import matplotlib.pyplot as plt
 
-from ThermoNet.dataset import ThermoDataset
+from thermonet.dataset import ThermoDataset
 
 
 class PlotHandler(object):
