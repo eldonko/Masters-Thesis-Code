@@ -2,3 +2,5 @@ torch
 ThermoNet
 pandas
 PyPDF2
+matplotlib
+numpy

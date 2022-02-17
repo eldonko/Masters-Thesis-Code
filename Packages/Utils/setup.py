@@ -7,7 +7,7 @@ setuptools.setup(
     author_email="danielschatzl16@gmail.com",
     description="utils",
     packages=setuptools.find_packages(),
-    install_requires=['torch', 'ThermoNet', 'pandas', 'PyPDF2'],
+    install_requires=['torch', 'ThermoNet', 'pandas', 'PyPDF2', 'matplotlib', 'numpy'],
     classifiers=[
         'Programming Language :: Python',
         'Programming Language :: Python :: 3',

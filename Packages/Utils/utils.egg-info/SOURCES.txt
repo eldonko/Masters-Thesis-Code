@@ -3,6 +3,7 @@ MANIFEST.in
 README.md
 setup.py
 utils/__init__.py
+utils/data_handler.py
 utils/plot.py
 utils/sgte_converter.py
 utils.egg-info/PKG-INFO
