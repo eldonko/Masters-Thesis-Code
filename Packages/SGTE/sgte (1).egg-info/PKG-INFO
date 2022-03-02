@@ -1,0 +1,16 @@
+Metadata-Version: 2.1
+Name: sgte
+Version: 0.1.0
+Summary: Converts the sgte data coefficients stored in data into (temperature, value) pairs.
+Home-page: UNKNOWN
+Author: Daniel Schatzl
+Author-email: danielschatzl16@gmail.com
+License: UNKNOWN
+Platform: UNKNOWN
+Classifier: Programming Language :: Python
+Classifier: Programming Language :: Python :: 3
+Classifier: Programming Language :: Python :: 3.6
+License-File: LICENSE
+
+UNKNOWN
+

@@ -14,7 +14,7 @@ class ElementClassifier(nn.Module):
     phases classifies thermodynamic measurement data in the sense that given measurement data for the
     Gibbs energy, entropy, enthalpy or the heat capacity at certain temperatures, it is able to tell which  element
     this measurement data belongs to.
-    
+
     Version: Input padding to maximum 10 measurements
 
     """
@@ -90,7 +90,7 @@ class ElementClassifier(nn.Module):
         """
 
         # Maximum number of measurements
-        max_num_measurements = self.in_features/2
+        max_num_measurements = self.in_features / 2
 
         # Input checking
         if not len(x.shape) == 3:

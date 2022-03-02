@@ -138,4 +138,10 @@ class ElementDatasetCreator(object):
             test_data = phase_data[train_indices:train_indices + test_indices]
             val_data = phase_data[train_indices + test_indices:]
 
+        # Sort the datasets by temperature
+        train_data = train_data[:, train_data[:, :, 0].argsort()][np.diag_indices(2)]
+        test_data = test_data[:, test_data[:, :, 0].argsort()][np.diag_indices(2)]
+        if val_data is not None:
+            val_data = val_data[:, val_data[:, :, 0].argsort()][np.diag_indices(2)]
+
         return train_data, test_data, val_data
