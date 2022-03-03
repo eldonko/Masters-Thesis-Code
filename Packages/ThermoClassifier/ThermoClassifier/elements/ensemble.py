@@ -1,6 +1,7 @@
 import os
 import warnings
 import pkg_resources
+from collections import Counter
 
 import torch
 import torch.nn as nn
@@ -9,7 +10,7 @@ from torch.nn.functional import pad
 import pandas as pd
 
 
-class ElementClassifier(nn.Module):
+class EnsembleClassifierNet(nn.Module):
     """
     phases classifies thermodynamic measurement data in the sense that given measurement data for the
     Gibbs energy, entropy, enthalpy or the heat capacity at certain temperatures, it is able to tell which  element
@@ -31,7 +32,7 @@ class ElementClassifier(nn.Module):
 		    Defines for which properties the classification should be made. Must be one of 'G', 'S', 'H'
 		    or 'C'.
 		"""
-        super(ElementClassifier, self).__init__()
+        super(EnsembleClassifierNet, self).__init__()
 
         # File paths
         self.element_data_path = r'../data/Phases.xlsx'
@@ -94,16 +95,18 @@ class ElementClassifier(nn.Module):
 
         # Input checking
         if not len(x.shape) == 3:
-            raise ValueError('The network input must be a torch.tensor of shape (batch_size, n, 2), where n is an '
-                             'arbitrary number smaller or equal 10. The tensor you provided has shape ', x.shape)
+            raise ValueError(f'The network input must be a torch.tensor of shape (batch_size, n, 2), where n is an '
+                             'arbitrary number smaller or equal %i. The tensor you provided has shape ' %
+                             max_num_measurements, x.shape)
 
         if x.shape[2] != 2:
             raise ValueError('The network input must be a torch.tensor of shape (batch_size, n, 2), where n is an '
-                             'arbitrary number smaller or equal 10. The tensor you provided has shape ', x.shape)
+                             'arbitrary number smaller or equal %i. The tensor you provided has shape ' %
+                             max_num_measurements, x.shape)
 
         if x.shape[1] > max_num_measurements:
-            warnings.warn('The second dimension of the input tensor should not be greater than 10. The entries with '
-                          'index equal or greater than 10 will be left out!')
+            warnings.warn('The second dimension of the input tensor should not be greater than %i . The entries with '
+                          'index equal or greater than %i will be left out!' % (max_num_measurements, max_num_measurements))
             x = x[:, :max_num_measurements]
 
         # If the second dimension of the input (=number of measurements) is smaller than 10, pad the tensor with 0 after
@@ -127,3 +130,30 @@ class ElementClassifier(nn.Module):
         model_name = self.models_path + 'elements'
         stream = pkg_resources.resource_stream(__name__, model_name)
         self.fc = torch.load(stream)
+
+
+def majority_vote(votes: list, error_class: int, threshold: float = 0.5):
+    """
+    Given votes from multiple neural network, this function gives the majority votes. If no class gets more than
+    votes then the threshold, the error class is returned
+
+    Parameters
+    ----------
+    threshold: float :
+        threshold for the minimum percentage of votes for one class so that it isn't classified as error. If
+        votes for most voted class divided by the number of votes is smaller than threshold, the error class is returned
+    error_class: int :
+        class number that is returned in case the vote percentage is below threshold
+    votes: list :
+        nested list containing the votes
+
+    Returns
+    -------
+    class with the most votes or error class for every element in the batch (i.e., every sub list in the nested list)
+    """
+
+    # Get the classes with the most votes
+    a = [Counter(vote).most_common(1)[0][0] if Counter(vote).most_common(1)[0][1]/len(vote) >
+         threshold else error_class for vote in votes]
+
+    return a

@@ -96,6 +96,7 @@ class DatasetCreator(object):
                 else:
                     val_data = np.vstack((val_data, val))
 
+        print(train_data.shape)
         # Create the datasets
         self.train_set = ClassificationDataset()
         self.test_set = ClassificationDataset()

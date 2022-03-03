@@ -94,16 +94,19 @@ class ElementClassifier(nn.Module):
 
         # Input checking
         if not len(x.shape) == 3:
-            raise ValueError('The network input must be a torch.tensor of shape (batch_size, n, 2), where n is an '
-                             'arbitrary number smaller or equal 10. The tensor you provided has shape ', x.shape)
+            raise ValueError(f'The network input must be a torch.tensor of shape (batch_size, n, 2), where n is an '
+                             'arbitrary number smaller or equal %i. The tensor you provided has shape ' %
+                             max_num_measurements, x.shape)
 
         if x.shape[2] != 2:
             raise ValueError('The network input must be a torch.tensor of shape (batch_size, n, 2), where n is an '
-                             'arbitrary number smaller or equal 10. The tensor you provided has shape ', x.shape)
+                             'arbitrary number smaller or equal %i. The tensor you provided has shape ' %
+                             max_num_measurements, x.shape)
 
         if x.shape[1] > max_num_measurements:
-            warnings.warn('The second dimension of the input tensor should not be greater than 10. The entries with '
-                          'index equal or greater than 10 will be left out!')
+            warnings.warn('The second dimension of the input tensor should not be greater than %i . The entries with '
+                          'index equal or greater than %i will be left out!' % (
+                          max_num_measurements, max_num_measurements))
             x = x[:, :max_num_measurements]
 
         # If the second dimension of the input (=number of measurements) is smaller than 10, pad the tensor with 0 after
