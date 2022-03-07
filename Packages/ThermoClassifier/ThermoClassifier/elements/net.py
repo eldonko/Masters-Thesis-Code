@@ -19,7 +19,7 @@ class ElementClassifier(nn.Module):
 
     """
 
-    def __init__(self, train=False, in_features=20, hidden_size_linear=64):
+    def __init__(self, train=False, in_features=20, hidden_size_linear=64, hidden_layers=1):
         """
 
         Parameters
@@ -52,15 +52,14 @@ class ElementClassifier(nn.Module):
             if not train and not os.path.exists(os.path.join(self.models_path, 'elements')):
                 print('New network had to be initialized as no network exists yet. Training necessary!')
 
-            self.fc = Sequential(
-                Linear(self.in_features, self.hidden_size_linear),
-                ReLU(),
-                Linear(self.hidden_size_linear, self.hidden_size_linear),
-                ReLU(),
-                # Linear(self.hidden_size_linear, self.hidden_size_linear),
-                # Tanh(),
-                Linear(self.hidden_size_linear, self.num_classes)
-            )
+            # Create the network
+            self.fc = Sequential()
+            self.fc.add_module('in', Linear(self.in_features, self.hidden_size_linear))
+            self.fc.add_module('a_in', ReLU())
+            for i in range(hidden_layers):
+                self.fc.add_module('h_' + str(i + 1), Linear(self.hidden_size_linear, self.hidden_size_linear))
+                self.fc.add_module('a_' + str(i + 1), ReLU())
+            self.fc.add_module('out', Linear(self.hidden_size_linear, self.num_classes))
 
             def init_weights(m):
                 if isinstance(m, nn.Linear):

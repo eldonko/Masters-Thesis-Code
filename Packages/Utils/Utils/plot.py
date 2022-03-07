@@ -1,6 +1,7 @@
 import matplotlib.pyplot as plt
 
 from thermonet.dataset import ThermoDataset
+from laenge.dataset import LaengeDataset
 
 
 class PlotHandler(object):
@@ -42,13 +43,16 @@ class PlotHandler(object):
         -------
 
         """
-
-        dataset = ThermoDataset(element, phase, start_temp, end_temp, scaling=scaling)
-        temp, gibbs, entropy, enthalpy, heat_cap = dataset.get_data()
-
         if self.net == 'Laenge':
+            dataset = LaengeDataset(element, phase, start_temp, end_temp)
+            temp, gibbs, entropy, enthalpy, heat_cap = dataset.get_data()
+            gibbs, enthalpy = gibbs/1000, enthalpy/1000
             gibbs_p, entropy_p, enthalpy_p, heat_cap_p = net(temp, temp, temp, temp)
+            entropy_p *= 1000
+            heat_cap_p *= 1000
         elif self.net == 'Thermo':
+            dataset = ThermoDataset(element, phase, start_temp, end_temp)
+            temp, gibbs, entropy, enthalpy, heat_cap = dataset.get_data()
             gibbs_p = net(temp)
             entropy_p, enthalpy_p, heat_cap_p = net.output_all(temp)
 

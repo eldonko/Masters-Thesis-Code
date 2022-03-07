@@ -75,10 +75,13 @@ class SGTEHandler(object):
 
         # If phases is not None, set the phases as passed. If phases is ['all'], use all possible phases
         if phases is not None:
-            # TODO: Add error handling
             if phases == ['all']:
                 self.selected_phases = possible_phases
             else:
+                for phase in phases:
+                    assert phase in possible_phases, 'At least one of the phases provided is not valid. ' \
+                                            + str(phases) + ' was given as input, whereas the following phases ' \
+                                            'are valid: ' + possible_phases
                 self.selected_phases = phases
             return
 
@@ -121,6 +124,88 @@ class SGTEHandler(object):
 
         print()
         self.selected_phases = selected_phases
+
+    def evaluate_equations(self, start_temp, end_temp, p, gibbs=True, entropy=False, enthalpy=False, heat_capacity=False
+                           , plot=True, phases: list = None, step=1):
+        """Evaluates the Gibbs energy for a temperature range and selected phase at a certain pressure.
+
+        Parameters
+        ----------
+        start_temp : int
+            lower bound of the temperature interval
+        end_temp : int
+            upper bound of the temperature interval
+        p : float
+            pressure
+        gibbs : bool
+            if True, Gibbs energy is evaluated (Default value = True)
+        entropy : bool
+            if True, entropy is evaluated (Default value = False)
+        enthalpy : bool
+             if True, enthalpy is evaluated (Default value = False)
+        heat_capacity : bool
+            if True, heat capacity is evaluated (Default value = False)
+        plot : bool
+            if True, results are plotted (Default value = True)
+        phases : list
+            phases to be evaluated as list of strings or None (Default value = None)
+        step : float
+            step size of temperature range. Determines the amount of data created. The smaller the step size, the more
+            data is created. (Default value = 1)
+
+        Returns
+        -------
+
+        """
+
+        # Set the phases
+        self.set_phases(phases)
+
+        # Input checking and modification if needed
+        assert start_temp != end_temp
+        # Swap start_temp and end_temp if end_temp is smaller than start_temp
+        if end_temp < start_temp:
+            start_temp, end_temp = end_temp, start_temp
+        assert type(phases) == list
+
+        # Create the temperature range
+        temp_range = np.arange(start_temp, end_temp, step, dtype=np.float32)
+        ax_gibbs = None
+        ax_entropy = None
+        ax_enthalpy = None
+        ax_heat_capacity = None
+
+        # Loop through the selected phases
+        for i, phase in enumerate(self.selected_phases):
+            # Get the Gibbs energies for the temperature range
+            equation_result = self.solve_equations(phase, p, temp_range, gibbs, entropy, enthalpy, heat_capacity)
+            # Plot the obtained data
+            if plot:
+                if gibbs:
+                    ax_gibbs = self.plot_data(equation_result, ax_gibbs, 'G(J)_', phase, i)
+                if entropy:
+                    ax_entropy = self.plot_data(equation_result, ax_entropy, 'S(J/K)_', phase, i)
+                if enthalpy:
+                    ax_enthalpy = self.plot_data(equation_result, ax_enthalpy, 'H(J)_', phase, i)
+                if heat_capacity:
+                    ax_heat_capacity = self.plot_data(equation_result, ax_heat_capacity, 'Cp(J/K)_', phase, i)
+
+            # Save the obtained data to the sgte
+            if self.equation_result_data is None:
+                self.equation_result_data = equation_result
+            else:
+                self.equation_result_data = self.equation_result_data.merge(equation_result, on='Temperature')
+
+        # Plot the results
+        if plot:
+            if gibbs:
+                ax_gibbs.legend()
+            if entropy:
+                ax_entropy.legend()
+            if enthalpy:
+                ax_enthalpy.legend()
+            if heat_capacity:
+                ax_heat_capacity.legend()
 
     def solve_equations(self, phase, p, temp, gibbs, entropy, enthalpy, heat_capacity):
         """Evaluates the equations specified by Dinsdale (sgte). For further reference see "sgte Data for
@@ -242,82 +327,7 @@ class SGTEHandler(object):
 
         return gibbs_data_frame
 
-    def evaluate_equations(self, start_temp, end_temp, p, gibbs=True, entropy=False, enthalpy=False, heat_capacity=False
-                           , plot=True, phases=None, step=1):
-        """Evaluates the Gibbs energy for a temperature range and selected phase at a certain pressure.
-
-        Parameters
-        ----------
-        start_temp : int
-            lower bound of the temperature interval
-        end_temp : int
-            upper bound of the temperature interval
-        p : float
-            pressure
-        gibbs : bool
-            if True, Gibbs energy is evaluated (Default value = True)
-        entropy : bool
-            if True, entropy is evaluated (Default value = False)
-        enthalpy : bool
-             if True, enthalpy is evaluated (Default value = False)
-        heat_capacity : bool
-            if True, heat capacity is evaluated (Default value = False)
-        plot : bool
-            if True, results are plotted (Default value = True)
-        phases : list
-            phases to be evaluated as list of strings or None (Default value = None)
-        step : float
-            step size of temperature range. Determines the amount of data created. The smaller the step size, the more
-            data is created. (Default value = 1)
-
-        Returns
-        -------
-
-        """
-
-        # Set the phases
-        self.set_phases(phases)
-
-        # Create the temperature range
-        temp_range = np.arange(start_temp, end_temp, step, dtype=np.float32)
-        ax_gibbs = None
-        ax_entropy = None
-        ax_enthalpy = None
-        ax_heat_capacity = None
-
-        # Loop through the selected phases
-        for i, phase in enumerate(self.selected_phases):
-            # Get the Gibbs energies for the temperature range
-            equation_result = self.solve_equations(phase, p, temp_range, gibbs, entropy, enthalpy, heat_capacity)
-            # Plot the obtained data
-            if plot:
-                if gibbs:
-                    ax_gibbs = self.plot_data(equation_result, ax_gibbs, 'G(J)_', phase, i)
-                if entropy:
-                    ax_entropy = self.plot_data(equation_result, ax_entropy, 'S(J/K)_', phase, i)
-                if enthalpy:
-                    ax_enthalpy = self.plot_data(equation_result, ax_enthalpy, 'H(J)_', phase, i)
-                if heat_capacity:
-                    ax_heat_capacity = self.plot_data(equation_result, ax_heat_capacity, 'Cp(J/K)_', phase, i)
-
-            # Save the obtained data to the sgte
-            if self.equation_result_data is None:
-                self.equation_result_data = equation_result
-            else:
-                self.equation_result_data = self.equation_result_data.merge(equation_result, on='Temperature')
-
-        # Plot the results
-        if plot:
-            if gibbs:
-                ax_gibbs.legend()
-            if entropy:
-                ax_entropy.legend()
-            if enthalpy:
-                ax_enthalpy.legend()
-            if heat_capacity:
-                ax_heat_capacity.legend()
-
-    def get_stable_properties(self, start_temp, end_temp, p=1e5, measurement='G'):
+    def get_stable_properties(self, start_temp, end_temp, p=1e5, measurement='G', step=1):
         """Solves the sgte equations for the given element and all phases and returns only the properties in the stable
         phases. This means, the Gibbs energy needs to be evaluated no matter which measurement is conducted, because
         the stable with the minimum Gibbs energy at a certain temperature is the stable phase.
@@ -349,7 +359,7 @@ class SGTEHandler(object):
 
         # Evaluate the equations for the Gibbs energy and if selected another property
         self.evaluate_equations(start_temp, end_temp, p, gibbs=True, entropy=entropy, enthalpy=enthalpy,
-                                heat_capacity=heat_cap, plot=False, phases=['all'])
+                                heat_capacity=heat_cap, plot=False, phases=['all'], step=step)
 
         # Get the results
         data = self.equation_result_data

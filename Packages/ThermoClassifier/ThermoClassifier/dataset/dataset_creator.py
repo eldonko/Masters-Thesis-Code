@@ -14,7 +14,7 @@ class DatasetCreator(object):
     """
 
     def __init__(self, temp_range=(200, 2000), measurement='G', seq_len=5, splits=(0.8, 0.2),
-                 validation=False, elements=None, stable_only=False):
+                 validation=False, elements=None, stable_only=False, step=1.):
         """
         Creates the DatasetCreator
 
@@ -79,7 +79,7 @@ class DatasetCreator(object):
             # Create the data
             edc = ElementDatasetCreator(label_range, element=phases_per_element.index[i], temp_range=temp_range,
                                         measurement=measurement, seq_len=seq_len, splits=splits, validation=validation,
-                                        stable_only=stable_only)
+                                        stable_only=stable_only, step=step)
             train, test, val = edc.get_data()
 
             if train_data is None:

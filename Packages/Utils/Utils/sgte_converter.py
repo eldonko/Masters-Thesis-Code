@@ -52,7 +52,7 @@ class SGTEConverter(object):
         pdf_reader = PyPDF2.PdfFileReader(pdf_file_obj)
 
         # for p in range(12, 172):
-        for p in range(125, 126):
+        for p in range(170, 172):
             page = pdf_reader.getPage(p)
             page_text = page.extractText()
 
@@ -198,3 +198,7 @@ class SGTEConverter(object):
                 text_dict = new_text_dict
 
                 sign = 1
+
+
+sgte = SGTEConverter(r"C:\Users\danie\Documents\Montanuni\Masterarbeit\2 Literatur\Daten\SGTE Data For Pure Elements [Dinsdale, A.].pdf")
+sgte.read_doc()
