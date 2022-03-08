@@ -55,14 +55,14 @@ class DatasetCreator(object):
         # Load the element-phase excel sheet to get all elements and to create the labels
         element_phase_filename = r'../data/Phases.xlsx'
         stream = pkg_resources.resource_stream(__name__, element_phase_filename)
-        element_phase_data = pd.read_excel(stream, sheet_name='Phases').set_index('Index')
+        self.element_phase_data = pd.read_excel(stream, sheet_name='Phases').set_index('Index')
 
         # If only certain phases shall be selected, then just retrieve those phases from element_phase_data
         if elements is not None:
-            element_phase_data = element_phase_data[elements]
+            self.element_phase_data = self.element_phase_data[elements]
 
         # Prepare creating the labels for each element.
-        phases_per_element = element_phase_data.sum()
+        phases_per_element = self.element_phase_data.sum()
         last_label = 0
 
         train_data, test_data, val_data = None, None, None

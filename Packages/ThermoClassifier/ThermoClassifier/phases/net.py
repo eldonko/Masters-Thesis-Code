@@ -15,20 +15,24 @@ class PhaseClassifier(nn.Module):
 	a given element this measurement data belongs to.
 	"""
 
-    def __init__(self, element, train=False, measurement='G'):
+    def __init__(self, element, train=False, measurement='G', hidden_layers=1, hidden_size=32):
         """
 
         Parameters
         ----------
 
-		element : str
+		element: str :
 		    Which element the measurements are from (and the phase should be predicted for)
-		train : bool
+		train: bool :
 		    If train is True, a network with random weights is generated and trained, if train is False, an
 		    already trained network for this element and measurement type will be loaded. (Default value = False)
-		measurement : str
+		measurement: str :
 		    Defines for which properties the classification should be made. Must be one of 'G', 'S', 'H'
 		    or 'C'. (Default value = 'G')
+		hidden_layers: int :
+		    number of hidden layers
+		hidden_size: int :
+		    number of nodes in the hidden layers
 		"""
         super(PhaseClassifier, self).__init__()
 
@@ -40,7 +44,7 @@ class PhaseClassifier(nn.Module):
 
         # File paths
         self.element_data_path = r'../data/Phases.xlsx'
-        self.models_path = r'./models/'
+        self.models_path = r'./models/new/'
 
         # Load element data
         self.element_data = None
@@ -51,19 +55,28 @@ class PhaseClassifier(nn.Module):
         # Fully connected net for classification
         self.num_classes = self.element_data[element].sum()
         self.in_features = 2
-        self.hidden_size_linear = 32
+        self.hidden_size_linear = hidden_size
 
         # For training, create a new network, else load a pre-trained network
         def create_net():
+            """
             fc = Sequential(
                 Linear(self.in_features, self.hidden_size_linear),
-                Tanh(),
+                ReLU(),
                 Linear(self.hidden_size_linear, self.hidden_size_linear),
-                Tanh(),
+                ReLU(),
                 # Linear(self.hidden_size_linear, self.hidden_size_linear),
                 # Tanh(),
                 Linear(self.hidden_size_linear, self.num_classes)
-            )
+            )"""
+
+            fc = Sequential()
+            fc.add_module('in', Linear(self.in_features, self.hidden_size_linear))
+            fc.add_module('a_in', ReLU())
+            for i in range(hidden_layers):
+                fc.add_module('h_' + str(i + 1), Linear(self.hidden_size_linear, self.hidden_size_linear))
+                fc.add_module('a_' + str(i + 1), ReLU())
+            fc.add_module('out', Linear(self.hidden_size_linear, self.num_classes))
 
             def init_weights(m):
                 if isinstance(m, nn.Linear):
@@ -114,6 +127,6 @@ class PhaseClassifier(nn.Module):
         """
         Loads a network from the directory provided at self.models_path
         """
-        model_name = self.models_path + self.element + '_' + self.measurement + '_1.pth'  # e.g., Fe_G
+        model_name = self.models_path + self.element + '_' + self.measurement + '.pth'  # e.g., Fe_G
         stream = pkg_resources.resource_stream(__name__, model_name)
         self.fc = torch.load(stream)
