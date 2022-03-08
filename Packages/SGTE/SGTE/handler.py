@@ -343,6 +343,8 @@ class SGTEHandler(object):
         measurement : str
             Measurement type/property for which the evaluation should be made. Must be one of 'G', 'S',
             'H' or 'C' (Default value = 'G')
+        step : float
+            step size in the temperature range
 
         Returns
         -------
@@ -367,17 +369,17 @@ class SGTEHandler(object):
         # Extract the properties for the stable phase. If measurement is not the Gibbs energy, first the indices of
         # the minimum Gibbs energy have to be extracted so that afterwards the values at those indices can be chosen
         # from the property
-        step = 0
+        s = 0
         if measurement != 'G':
-            step = 1
+            s = 1
 
         # Get the Gibbs energies from the data
-        gibbs_indices = list(range(1, len(data.columns), 1 + step))
+        gibbs_indices = list(range(1, len(data.columns), 1 + s))
         gibbs_energies = data.iloc[:, gibbs_indices]
 
         # Select the indices where the Gibbs energies are minimal and add 1 so that it matches with the index of
         # the same phase of the property which is to be selected
-        indices = np.argmin(gibbs_energies.values, axis=1) * (1 + step) + 1 + step
+        indices = np.argmin(gibbs_energies.values, axis=1) * (1 + s) + 1 + s
 
         # Get the measurements from the properties where the respective phase is stable
         self.measurements = pd.DataFrame()

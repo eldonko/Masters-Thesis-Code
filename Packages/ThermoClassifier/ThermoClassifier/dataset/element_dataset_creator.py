@@ -12,7 +12,7 @@ class ElementDatasetCreator(object):
     """
 
     def __init__(self, label_range, element, temp_range=(200, 2000), measurement='G', seq_len=5, splits=(0.8, 0.2),
-                 validation=False, stable_only=False, step=1.):
+                 validation=False, stable_only=False, step=1., p=1e5):
         """
 		Initializes the dataset
 
@@ -38,6 +38,8 @@ class ElementDatasetCreator(object):
 		    False)
 		stable_only : bool
 		    Defines whether only measurement values from stable phases should be loaded or not (Default value = False)
+		p : float
+		    pressure at which data should be generated
 		"""
         super(ElementDatasetCreator, self).__init__()
 
@@ -66,7 +68,7 @@ class ElementDatasetCreator(object):
                                             heat_capacity=heat_cap, step=step)
             self.data = sgte_handler.equation_result_data
         else:
-            sgte_handler.get_stable_properties(temp_range[0], temp_range[1], measurement=measurement, step=step)
+            sgte_handler.get_stable_properties(temp_range[0], temp_range[1], p=p, measurement=measurement, step=step)
             self.data = sgte_handler.measurements
 
         self.data_remainder = len(self.data) % self.seq_len

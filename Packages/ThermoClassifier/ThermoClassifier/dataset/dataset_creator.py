@@ -14,7 +14,7 @@ class DatasetCreator(object):
     """
 
     def __init__(self, temp_range=(200, 2000), measurement='G', seq_len=5, splits=(0.8, 0.2),
-                 validation=False, elements=None, stable_only=False, step=1.):
+                 validation=False, elements=None, user='phase', step=1., p=1e5):
         """
         Creates the DatasetCreator
 
@@ -37,8 +37,11 @@ class DatasetCreator(object):
 		elements : list of str or None
 		    Which elements to load, if None, load all elements, else pass list of strings with the elements
 		    abbreviations (e.g. ['O', 'Fe'] if Oxygen and Iron should be loaded but nothing else) (Default value = None)
-		stable_only : bool
-		    Defines whether only measurement values from stable phases should be loaded or not (Default value = False)
+		user : str
+		    Defines whether the data generated for phase or element classification. Can be either 'phase' or 'element'
+		    (Default value = 'phase')
+		p : float
+		    pressure at which data should be generated
         """
         super(DatasetCreator, self).__init__()
 
@@ -51,6 +54,7 @@ class DatasetCreator(object):
             assert len(splits) == 3
         assert np.array(splits).sum() == 1
         assert elements is None or type(elements) == list
+        assert user in ['phase', 'element']
 
         # Load the element-phase excel sheet to get all elements and to create the labels
         element_phase_filename = r'../data/Phases.xlsx'
@@ -69,7 +73,7 @@ class DatasetCreator(object):
 
         for i in range(len(phases_per_element)):
             # Create the labels
-            if not stable_only:
+            if user == 'phase':
                 label_range = (last_label, last_label + phases_per_element[i] - 1)
                 last_label += phases_per_element[i]
             else:
@@ -79,7 +83,7 @@ class DatasetCreator(object):
             # Create the data
             edc = ElementDatasetCreator(label_range, element=phases_per_element.index[i], temp_range=temp_range,
                                         measurement=measurement, seq_len=seq_len, splits=splits, validation=validation,
-                                        stable_only=stable_only, step=step)
+                                        stable_only=True, step=step, p=p)
             train, test, val = edc.get_data()
 
             if train_data is None:
@@ -96,7 +100,7 @@ class DatasetCreator(object):
                 else:
                     val_data = np.vstack((val_data, val))
 
-        print(train_data.shape)
+        print('Dataset shape: ', train_data.shape)
         # Create the datasets
         self.train_set = ClassificationDataset()
         self.test_set = ClassificationDataset()
