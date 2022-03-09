@@ -16,6 +16,7 @@ thermoclassifier/dataset/__init__.py
 thermoclassifier/dataset/dataset.py
 thermoclassifier/dataset/dataset_creator.py
 thermoclassifier/dataset/element_dataset_creator.py
+thermoclassifier/dataset/encoding.py
 thermoclassifier/elements/__init__.py
 thermoclassifier/elements/ensemble.py
 thermoclassifier/elements/net.py

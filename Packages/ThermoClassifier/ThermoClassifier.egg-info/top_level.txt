@@ -1,1 +1,2 @@
-ThermoClassifier
+tests
+thermoclassifier

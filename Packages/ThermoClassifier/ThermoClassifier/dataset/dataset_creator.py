@@ -5,6 +5,7 @@ import pandas as pd
 
 from .dataset import ClassificationDataset
 from .element_dataset_creator import ElementDatasetCreator
+from .encoding import Encoder
 
 
 class DatasetCreator(object):
@@ -38,7 +39,7 @@ class DatasetCreator(object):
 		    Which elements to load, if None, load all elements, else pass list of strings with the elements
 		    abbreviations (e.g. ['O', 'Fe'] if Oxygen and Iron should be loaded but nothing else) (Default value = None)
 		user : str
-		    Defines whether the data generated for phase or element classification. Can be either 'phase' or 'element'
+		    Defines whether the data is generated for phase or element classification. Can be either 'phase' or 'element'
 		    (Default value = 'phase')
 		p : float
 		    pressure at which data should be generated
@@ -62,28 +63,20 @@ class DatasetCreator(object):
         self.element_phase_data = pd.read_excel(stream, sheet_name='Phases').set_index('Index')
 
         # If only certain phases shall be selected, then just retrieve those phases from element_phase_data
-        if elements is not None:
+        if elements is None:
+            elements = self.element_phase_data.columns.values
+        else:
             self.element_phase_data = self.element_phase_data[elements]
 
-        # Prepare creating the labels for each element.
-        phases_per_element = self.element_phase_data.sum()
-        last_label = 0
-
+        # Allocate storage for the datasets
         train_data, test_data, val_data = None, None, None
 
-        for i in range(len(phases_per_element)):
-            # Create the labels
-            if user == 'phase':
-                label_range = (last_label, last_label + phases_per_element[i] - 1)
-                last_label += phases_per_element[i]
-            else:
-                label_range = (last_label, last_label)
-                last_label += 1
-
-            # Create the data
-            edc = ElementDatasetCreator(label_range, element=phases_per_element.index[i], temp_range=temp_range,
+        for element in elements:
+            # Encode the element name to its label
+            element_label = Encoder()(element)
+            edc = ElementDatasetCreator(element_label=element_label, element=element, temp_range=temp_range,
                                         measurement=measurement, seq_len=seq_len, splits=splits, validation=validation,
-                                        stable_only=True, step=step, p=p)
+                                        step=step, p=p, user=user)
             train, test, val = edc.get_data()
 
             if train_data is None:

@@ -15,7 +15,7 @@ class PhaseClassifier(nn.Module):
 	a given element this measurement data belongs to.
 	"""
 
-    def __init__(self, element, train=False, measurement='G', hidden_layers=1, hidden_size=32):
+    def __init__(self, train=False, measurement='G', hidden_layers=1, hidden_size=32):
         """
 
         Parameters
@@ -49,12 +49,10 @@ class PhaseClassifier(nn.Module):
         # Load element data
         self.element_data = None
         self.load_element_data()
-        assert element in self.element_data.columns.values
-        self.element = element
 
         # Fully connected net for classification
-        self.num_classes = self.element_data[element].sum()
-        self.in_features = 2
+        self.num_classes = len(self.element_data)
+        self.in_features = 3
         self.hidden_size_linear = hidden_size
 
         # For training, create a new network, else load a pre-trained network

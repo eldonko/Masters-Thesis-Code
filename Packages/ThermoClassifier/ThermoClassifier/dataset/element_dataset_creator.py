@@ -2,6 +2,7 @@ import numpy as np
 import pandas as pd
 
 from sgte.handler import SGTEHandler
+from .encoding import Encoder
 
 
 class ElementDatasetCreator(object):
@@ -11,15 +12,14 @@ class ElementDatasetCreator(object):
 
     """
 
-    def __init__(self, label_range, element, temp_range=(200, 2000), measurement='G', seq_len=5, splits=(0.8, 0.2),
-                 validation=False, stable_only=False, step=1., p=1e5):
+    def __init__(self, element_label, element, temp_range=(200, 2000), measurement='G', seq_len=5, splits=(0.8, 0.2),
+                 validation=False, step=1., p=1e5, user='phase'):
         """
 		Initializes the dataset
 
-		label_range : tuple of ints (start label, end label)
-		    the label range is passed by the DatasetCreator so that for every element and phase a unique label can be
-		    created. Each phase of an element receives a label in the label range. If stable_only is True, than every
-		    phase of an element gets the same label
+		element_label : int
+		    the element range is passed by the DatasetCreator so that for every element a unique label can be
+		    created.
 		element : str
 		    the element for which the data should be loaded.
 		temp_range: tuple of ints (low_temp, high_temp)
@@ -36,62 +36,43 @@ class ElementDatasetCreator(object):
 		validation : bool
 		    Whether or not a validation set should be created. In this case, splits must be of length 3 (Default value =
 		    False)
-		stable_only : bool
-		    Defines whether only measurement values from stable phases should be loaded or not (Default value = False)
 		p : float
 		    pressure at which data should be generated
+		user : str
+		    Defines whether the data is generated for phase or element classification. Can be either 'phase' or 'element'
+		    (Default value = 'phase')
 		"""
         super(ElementDatasetCreator, self).__init__()
-
-        # Input checking
-        assert label_range[0] <= label_range[1]
 
         # Make inputs class attributes
         self.seq_len = seq_len
         self.splits = splits
         self.validation = validation
         self.element = element
+        self.user = user
+        self.measurement = measurement
 
-        # Set the properties to load
-        gibbs = True if measurement == 'G' else False
-        entropy = True if measurement == 'S' else False
-        enthalpy = True if measurement == 'H' else False
-        heat_cap = True if measurement == 'C' else False
+        # Depending on the user decide whether to add phase labels
+        add_phase_labels = False
+        if self.user == 'phase':
+            add_phase_labels = True
 
-        # Load the data based on whether data from any phase can be included or only from stable phases
+        # Load the data from stable phases (add the phase labels in case of phase classification)
         sgte_handler = SGTEHandler(element)
-        if not stable_only:
-            sgte_handler.evaluate_equations(temp_range[0], temp_range[1], 1e5, plot=False, phases=['all'],
-                                            gibbs=gibbs,
-                                            entropy=entropy,
-                                            enthalpy=enthalpy,
-                                            heat_capacity=heat_cap, step=step)
-            self.data = sgte_handler.equation_result_data
-        else:
-            sgte_handler.get_stable_properties(temp_range[0], temp_range[1], p=p, measurement=measurement, step=step)
-            self.data = sgte_handler.measurements
+        sgte_handler.get_stable_properties(temp_range[0], temp_range[1], p=p, measurement=measurement, step=step,
+                                           add_phase_labels=add_phase_labels)
+        self.data = sgte_handler.measurements
 
         self.data_remainder = len(self.data) % self.seq_len
 
-        # Check if label length and number of phases match
-        assert (label_range[1] - label_range[0] + 1) == len(self.data.columns) - 1
-
         # Create the data sets for all phases of the element. self.val_data is only not None, if validation is True
-        self.train_data, self.test_data, self.val_data = self.create_batches(label_range[0], 1)
-        for (l, c) in zip(range(label_range[0] + 1, label_range[1] + 1), range(2, len(self.data.columns))):
-            tr, te, val = self.create_batches(l, c)
-
-            self.train_data = np.vstack((self.train_data, tr))
-            self.test_data = np.vstack((self.test_data, te))
-
-            if self.validation:
-                self.val_data = np.vstack((self.val_data, val))
+        self.train_data, self.test_data, self.val_data = self.create_batches(element_label)
 
     def get_data(self):
         """ """
         return self.train_data, self.test_data, self.val_data
 
-    def create_batches(self, label, col_index):
+    def create_batches(self, label):
         """
         For each phase of an element, batches of length self.seq_len containing (temperature, measurement, label) tuples
         are created. Only full size batches are accepted. This means, that if the length of the data loaded from the
@@ -102,8 +83,6 @@ class ElementDatasetCreator(object):
         ----------
         label :
             label for the data
-        col_index :
-            index of the column the data for the phases is in self.data
 
         Returns
         -------
@@ -120,13 +99,20 @@ class ElementDatasetCreator(object):
             indices = indices[:-self.data_remainder]
 
         # Extract the temperature and measurement
-        phase_df = pd.DataFrame(self.data.iloc[:, [0, col_index]])
+        phase_df = self.data
 
         # Add the label
-        phase_df['label'] = label
+        phase_df['Label'] = label
 
         # Reshape the data
-        phase_data = np.array(phase_df.loc[indices]).reshape((-1, self.seq_len, 3))
+        shape = (-1, self.seq_len, 3)
+        if self.user == 'phase':
+            # Update the shape
+            shape = (-1, self.seq_len, 4)
+
+            # Encode the phases
+            phase_df['Phase label'] = Encoder()(phase_df['Phase label'])
+        phase_data = np.array(phase_df.loc[indices]).reshape(shape)
 
         # Split the data
         train_indices = int(len(phase_data) * self.splits[0])

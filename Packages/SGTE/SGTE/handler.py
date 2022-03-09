@@ -327,7 +327,7 @@ class SGTEHandler(object):
 
         return gibbs_data_frame
 
-    def get_stable_properties(self, start_temp, end_temp, p=1e5, measurement='G', step=1):
+    def get_stable_properties(self, start_temp, end_temp, p=1e5, measurement='G', step=1, add_phase_labels=False):
         """Solves the sgte equations for the given element and all phases and returns only the properties in the stable
         phases. This means, the Gibbs energy needs to be evaluated no matter which measurement is conducted, because
         the stable with the minimum Gibbs energy at a certain temperature is the stable phase.
@@ -345,6 +345,8 @@ class SGTEHandler(object):
             'H' or 'C' (Default value = 'G')
         step : float
             step size in the temperature range
+        add_phase_labels : bool
+            defines if the labels of the phases which the data is taken from should be added to the data or not
 
         Returns
         -------
@@ -385,6 +387,14 @@ class SGTEHandler(object):
         self.measurements = pd.DataFrame()
         self.measurements['Temperature'] = data['Temperature']
         self.measurements['Measurements'] = data.values[np.arange(len(data)), indices]
+
+        # Add the phase label in case add_phase_labels is True
+        if add_phase_labels:
+            # Placeholder for the element label which will be added later
+            self.measurements['Label'] = np.zeros_like(self.measurements['Temperature'])
+
+            # Phase labels
+            self.measurements['Phase label'] = data.columns.values[indices]
 
     def plot_data(self, equation_result, ax, prefix, phase, i):
         """Plots the data of the equation results
