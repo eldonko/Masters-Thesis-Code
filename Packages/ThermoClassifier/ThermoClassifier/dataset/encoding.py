@@ -17,10 +17,10 @@ class Encoder(object):
 
     def __call__(self, inp):
         # If input is a Series of strings, encode the Series
-        if type(inp) == pd.Series and type(inp[0]):
+        if type(inp) == pd.Series and type(inp.iloc[0]) == str:
             return self.encode_phase(inp)
         # If input is a Series of integers, decode the Series
-        elif type(inp) == pd.Series and type(inp[0]) == np.int32:
+        elif type(inp) == pd.Series and type(inp.iloc[0]) == np.int32:
             return self.decode_phase(inp)
         elif type(inp) == str:
             return self.encode_element(inp)
@@ -43,7 +43,7 @@ class Encoder(object):
 
         """
         # Remove the first part of the string as this indicates the measurement and is not needed
-        to_remove = inp[0].split('_')[0] + '_'
+        to_remove = inp.iloc[0].split('_')[0] + '_'
 
         # Remove the measurement indicator from the Series
         inp = inp.str.replace(to_remove, '', regex=False).astype('category')

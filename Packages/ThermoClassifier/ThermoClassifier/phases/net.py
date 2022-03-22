@@ -53,6 +53,7 @@ class PhaseClassifier(nn.Module):
         # Fully connected net for classification
         self.num_classes = len(self.element_data)
         self.in_features = 3
+        #self.in_features = 2
         self.hidden_size_linear = hidden_size
 
         # For training, create a new network, else load a pre-trained network

@@ -70,10 +70,10 @@ class SGTEConverter(object):
 
                     self.current_element = element
                     print()
-                    print('----------')
-                    print(self.current_element, ', ', p)
-                    print('----------')
-                    print()
+                    ##print('----------')
+                    #print(self.current_element, ', ', p)
+                    #print('----------')
+                    #print()
                     self.elements.remove(element)
 
             slices = []
@@ -103,13 +103,13 @@ class SGTEConverter(object):
                 slices.append((0, self.last_phase))
 
             slices.sort(key=lambda y: y[0])
-            print(slices)
+            #print(slices)
 
             for i, slc in enumerate(slices):
                 if i < len(slices) - 1:
                     split_text = page_text[slc[0]:slices[i + 1][0]]
                     split_text = split_text.split(' ')
-                    print(split_text)
+                    #print(split_text)
                     self.last_phase = slc[1]
                     self.extract_text(split_text, slc[1])
 

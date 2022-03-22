@@ -1,6 +1,7 @@
 import matplotlib.pyplot as plt
+import torch
 
-from thermonet.dataset import ThermoDataset
+from thermonet.dataset import ThermoDatasetNew, ThermoDataset
 from laenge.dataset import LaengeDataset
 
 
@@ -126,7 +127,7 @@ class PlotHandler(object):
         -------
 
         """
-        dataset = ThermoDataset(element, phase, start_temp, end_temp)
+        dataset = ThermoDataset(element, start_temp, end_temp, phases=[phase])
         temp, targets = dataset.get_data()
 
         predictions = net(temp.float())
@@ -139,4 +140,38 @@ class PlotHandler(object):
         self.plot_property(temp, targets[:, 1], predictions[:, 1], axes[1], 'Entropy over temperature')
         self.plot_property(temp, targets[:, 2], predictions[:, 2], axes[2], 'Enthalpy over temperature')
         self.plot_property(temp, targets[:, 3], predictions[:, 3], axes[3], 'Heat capacity over temperature')
+        plt.show()
+
+    def properties_temp_modified_new(self, net, element, phase, start_temp=200, end_temp=2000):
+        """
+
+        Parameters
+        ----------
+       net : torch.nn.Module
+            trained neural network which outputs shall be plotted
+        element : str
+            element to load the dataset for
+        phase : str
+            phase to load the dataset for
+        start_temp : int
+            low value of the temperature interval (Default value = 200)
+        end_temp : int
+            high value of the temperature interval (Default value = 2000)
+
+        Returns
+        -------
+
+        """
+        dataset = ThermoDatasetNew(element, start_temp, end_temp, inp_phases=[phase]).get_data()
+
+        predictions = net(torch.tensor(dataset[:, [0, -2, -1]]).float())
+
+        predictions = predictions.detach()
+        temp = dataset[:, [0]]
+
+        fig, axes = plt.subplots(4, sharex=True, figsize=(7, 28))
+        self.plot_property(temp, dataset[:, [1]], predictions[:, 0], axes[0], 'Gibbs energy over temperature')
+        self.plot_property(temp, dataset[:, [2]], predictions[:, 1], axes[1], 'Entropy over temperature')
+        self.plot_property(temp, dataset[:, [3]], predictions[:, 2], axes[2], 'Enthalpy over temperature')
+        self.plot_property(temp, dataset[:, [4]], predictions[:, 3], axes[3], 'Heat capacity over temperature')
         plt.show()

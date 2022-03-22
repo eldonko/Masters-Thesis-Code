@@ -3,6 +3,8 @@ import pkg_resources
 
 import numpy as np
 import pandas as pd
+import seaborn as sns
+import matplotlib.pyplot as plt
 
 
 class SGTEHandler(object):
@@ -76,7 +78,7 @@ class SGTEHandler(object):
         # If phases is not None, set the phases as passed. If phases is ['all'], use all possible phases
         if phases is not None:
             if phases == ['all']:
-                self.selected_phases = possible_phases
+                self.selected_phases = list(possible_phases)
             else:
                 for phase in phases:
                     assert phase in possible_phases, 'At least one of the phases provided is not valid. ' \
@@ -115,7 +117,7 @@ class SGTEHandler(object):
                 else:
                     print('Please enter phase before pressing Enter')
             elif inp == 'all':
-                selected_phases = possible_phases
+                selected_phases = list(possible_phases)
                 done = True
             elif inp.upper() in possible_phases:
                 selected_phases.append(inp.upper())
@@ -127,7 +129,8 @@ class SGTEHandler(object):
 
     def evaluate_equations(self, start_temp, end_temp, p, gibbs=True, entropy=False, enthalpy=False, heat_capacity=False
                            , plot=True, phases: list = None, step=1):
-        """Evaluates the Gibbs energy for a temperature range and selected phase at a certain pressure.
+        """
+        Evaluates the Gibbs energy for a temperature range and selected phase at a certain pressure.
 
         Parameters
         ----------
@@ -166,7 +169,6 @@ class SGTEHandler(object):
         # Swap start_temp and end_temp if end_temp is smaller than start_temp
         if end_temp < start_temp:
             start_temp, end_temp = end_temp, start_temp
-        assert type(phases) == list
 
         # Create the temperature range
         temp_range = np.arange(start_temp, end_temp, step, dtype=np.float32)
@@ -194,7 +196,7 @@ class SGTEHandler(object):
             if self.equation_result_data is None:
                 self.equation_result_data = equation_result
             else:
-                self.equation_result_data = self.equation_result_data.merge(equation_result, on='Temperature')
+                self.equation_result_data = self.equation_result_data.merge(equation_result, on='Temperature', how='outer')
 
         # Plot the results
         if plot:
@@ -327,7 +329,8 @@ class SGTEHandler(object):
 
         return gibbs_data_frame
 
-    def get_stable_properties(self, start_temp, end_temp, p=1e5, measurement='G', step=1, add_phase_labels=False):
+    def get_stable_properties(self, start_temp, end_temp, p=1e5, measurement='G', step=1, add_phase_labels=False,
+                              plot=False):
         """Solves the sgte equations for the given element and all phases and returns only the properties in the stable
         phases. This means, the Gibbs energy needs to be evaluated no matter which measurement is conducted, because
         the stable with the minimum Gibbs energy at a certain temperature is the stable phase.
@@ -347,11 +350,16 @@ class SGTEHandler(object):
             step size in the temperature range
         add_phase_labels : bool
             defines if the labels of the phases which the data is taken from should be added to the data or not
+        plot : bool
+            plots the measurement with the stable phase information
 
         Returns
         -------
 
         """
+
+        # Reset equation results
+        self.equation_result_data = None
 
         # Input checking
         assert measurement in ['G', 'S', 'H', 'C']
@@ -377,7 +385,7 @@ class SGTEHandler(object):
 
         # Get the Gibbs energies from the data
         gibbs_indices = list(range(1, len(data.columns), 1 + s))
-        gibbs_energies = data.iloc[:, gibbs_indices]
+        gibbs_energies = data.iloc[:, gibbs_indices].fillna(np.inf)
 
         # Select the indices where the Gibbs energies are minimal and add 1 so that it matches with the index of
         # the same phase of the property which is to be selected
@@ -395,6 +403,17 @@ class SGTEHandler(object):
 
             # Phase labels
             self.measurements['Phase label'] = data.columns.values[indices]
+
+        # Plot the data
+        if plot:
+            sns.set_style("whitegrid")
+            fig, ax = plt.subplots(figsize=(14, 7))
+            if not add_phase_labels:
+                g = sns.scatterplot(x='Temperature', y='Measurements', data=self.measurements, s=1, ax=ax)
+            else:
+                g = sns.scatterplot(x='Temperature', y='Measurements', data=self.measurements, hue='Phase label', s=1, ax=ax)
+
+            g.set(title=measurement + ' against temperature')
 
     def plot_data(self, equation_result, ax, prefix, phase, i):
         """Plots the data of the equation results
@@ -418,11 +437,11 @@ class SGTEHandler(object):
         """
 
         if ax is None:
-            ax = equation_result.plot(x='Temperature', y=prefix + phase, kind='scatter', grid=True, s=0.5,
-                                      color=self.colors[i], label=phase, ylabel=prefix.replace('_', ''))
+            ax = equation_result.plot(x='Temperature', y=prefix + phase, kind='scatter', grid=True, s=0.2,
+                                      color=self.colors[i], label=phase, ylabel=prefix.replace('_', ''), figsize=(14, 7))
         else:
-            equation_result.plot(x='Temperature', y=prefix + phase, kind='scatter', grid=True, s=0.5, ax=ax,
-                                 color=self.colors[i], label=phase, ylabel=prefix.replace('_', ''))
+            equation_result.plot(x='Temperature', y=prefix + phase, kind='scatter', grid=True, s=0.2, ax=ax,
+                                 color=self.colors[i], label=phase, ylabel=prefix.replace('_', ''), figsize=(14, 7))
 
         return ax
 

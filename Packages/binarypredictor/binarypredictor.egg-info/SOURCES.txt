@@ -1,0 +1,11 @@
+LICENSE
+MANIFEST.in
+README.md
+setup.py
+binarypredictor/__init__.py
+binarypredictor/datagen.py
+binarypredictor.egg-info/PKG-INFO
+binarypredictor.egg-info/SOURCES.txt
+binarypredictor.egg-info/dependency_links.txt
+binarypredictor.egg-info/requires.txt
+binarypredictor.egg-info/top_level.txt

@@ -94,7 +94,6 @@ class TestData(object):
             else:
                 test_data = np.vstack((test_data, data))
 
-        print(test_data)
         # Create a dataset from the np.ndarray
         dataset = ClassificationDataset()
         dataset.set_samples(test_data)
