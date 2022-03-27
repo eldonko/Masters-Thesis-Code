@@ -3,7 +3,6 @@ import json
 import matplotlib.pyplot as plt
 import numpy as np
 from numpy.linalg import pinv
-from numpy.polynomial.polynomial import polyval
 from scipy.optimize import least_squares
 from tqdm import tqdm
 
@@ -171,7 +170,7 @@ class PolyGenerator(object):
 
         Parameters
         ----------
-        x : np.array
+        x : float
             x value where the constraint is located
         o : int
             order of the derivative of the constraint
@@ -210,6 +209,8 @@ class PolyGenerator(object):
 
         Returns
         -------
+        np.array :
+            polynomial coefficients
 
         """
 
@@ -219,43 +220,4 @@ class PolyGenerator(object):
         # Solve the equation system
         self.c = np.flip(pinv(self.vc) @ self.w)
 
-    def get_values(self):
-        """
-        Given the coefficients, return the function values
-
-        Returns
-        -------
-        np.array :
-            Function values at self.x
-
-        """
-
-        # Check if coefficients are already defined
-        if self.c is None:
-            self.get_cfs()
-
-        return polyval(self.x, self.c)
-
-    def get_value_at_x(self, x, o):
-        """
-        Returns the function value at x given the derivative order o.
-
-        Parameters
-        ----------
-        x : np.array
-            x value where the function should be evaluated
-        o : int
-            derivative order
-
-        Returns
-        -------
-        float :
-            function value at x
-        """
-
-        if self.c is None:
-            self.get_cfs()
-
-        v = vander_constraint(x, o, self.d)
-
-        return v @ np.flip(self.c)
+        return self.c
