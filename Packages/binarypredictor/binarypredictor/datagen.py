@@ -2,11 +2,12 @@ import json
 
 import matplotlib.pyplot as plt
 import numpy as np
-from numpy.linalg import pinv
 from scipy.optimize import least_squares
+import torch
+from torch.linalg import pinv
 from tqdm import tqdm
 
-from .math import vander_constraint
+from .poly import vander_constraint, Polynomial, PolynomialSet
 
 
 class DataGenerator(object):
@@ -17,36 +18,37 @@ class DataGenerator(object):
     def __init__(self):
         super(DataGenerator, self).__init__()
 
-        self.data_dict = {}
+        self.polys = []
 
-    def generate_data(self, nr_funcs, filepath):
+    def generate_data(self, nr_polys):
         """
-        Randomly generates pairs of functions which have either 0, 1 or 2 common tangents.
+        Randomly generates pairs of polynomials.
 
         Parameters
         ----------
-        nr_funcs : int
+        nr_polys : int
             number of functions to generate
-        filepath : str
-            path to store the resulting json file at
-
-        Returns
-        -------
 
         """
 
-        for i in tqdm(range(nr_funcs)):
-            # Get random PolyGenerators
-            pg, qg = self.new_funcs_pair()
+        for i in tqdm(range(nr_polys)):
+            # Get random PolySets
+            poly_set = self.new_funcs_pair()
 
-            # Get the points where the common tangent condition is fulfilled
-            pts = self.find_common_tangents(pg, qg)
+            self.polys.append(poly_set)
 
-            # Save the polynomial and the points to a dict
-            poly_data = {'p': list(pg.c.round(decimals=4)), 'q': list(qg.c.round(decimals=4)), 'pts': pts}
-            self.data_dict[i] = poly_data
+    def get_polys(self):
+        """
+        Returns the obtained polynomial sets.
 
-        self.save_data_dict(filepath)
+        Returns
+        -------
+        list :
+            list of PolynomialSets obtained
+
+        """
+
+        return self.polys
 
     @staticmethod
     def new_funcs_pair():
@@ -57,73 +59,29 @@ class DataGenerator(object):
         pg = PolyGenerator(d_p)
         qg = PolyGenerator(d_q)
 
-        # Add random constraints (only 0-th derivative) for the polynomial p
-        x_p = np.arange(1/(d_p + 2), 1, step=1/(d_p + 2))[:d_p + 1]
-        w_p = np.random.uniform(-1., 1., size=(d_p + 1, )) * 1e5
+        # Add random constraints (only 0-th derivative) for the polynomial p at fixed x-points
+        x_p = torch.arange(1/(d_p + 2), 1, step=1/(d_p + 2))[:d_p + 1]
+        w_p = torch.from_numpy(np.random.uniform(-1., 1., size=(d_p + 1, )).astype(np.float32))
 
         for x_p_i, w_p_i in zip(x_p, w_p):
-            pg.add_constraint(np.array([x_p_i]), 0, w_p_i)
+            pg.add_constraint(x_p_i, 0, w_p_i)
 
-        # dd random constraints (only 0-th derivative) for the polynomial q
-        x_q = np.arange(1 / (d_q + 2), 1, step=1 / (d_q + 2))[:d_q + 1]
-        w_q = np.random.uniform(-1., 1., size=(d_q + 1,)) * 1e5
+        # Add random constraints (only 0-th derivative) for the polynomial q at fixed x-points
+        x_q = torch.arange(1 / (d_q + 2), 1, step=1 / (d_q + 2))[:d_q + 1]
+        w_q = torch.from_numpy(np.random.uniform(-1., 1., size=(d_q + 1, )).astype(np.float32))
         for x_q_i, w_q_i in zip(x_q, w_q):
-            qg.add_constraint(np.array([x_q_i]), 0, w_q_i)
+            qg.add_constraint(x_q_i, 0, w_q_i)
 
-        return pg, qg
+        # Create a polynomial set and at the polynomials obtained by the polynomial generators
+        poly_set = PolynomialSet()
+        poly_set.append(Polynomial(pg.get_cfs()))
+        poly_set.append(Polynomial(qg.get_cfs()))
 
-    @staticmethod
-    def find_common_tangents(pg, qg):
-        """
-        Finds the common tangents between two polynomials by optimization.
+        # Scale the set so that the maximum value in the specified x-range is either 1 or -1
+        x = torch.arange(0., 1., step=.01)
+        poly_set.scale_by_max(x)
 
-        Parameters
-        ----------
-        pg : PolyGenerator
-            polynomial generator for polynomial p
-        qg : PolyGenerator
-            polynomial generator for polynomial q
-
-        Returns
-        -------
-        list :
-            list of points where the common tangent condition is fulfilled
-
-        """
-
-        # Define the functions
-        p = lambda x: pg.get_value_at_x(np.array([x]), 0)
-        dp = lambda x: pg.get_value_at_x(np.array([x]), 1)
-        q = lambda x: qg.get_value_at_x(np.array([x]), 0)
-        dq = lambda x: qg.get_value_at_x(np.array([x]), 1)
-
-        # Pre-allocate storage for the tangent points
-        pts = []
-
-        # Define the common tangent condition equations
-        def eqns(x):
-            x1, x2 = x[0], x[1]
-            eq1 = (dp(x1) - dq(x2))[0]
-            eq2 = (dp(x1) * (x1 - x2) - (p(x1) - q(x2)))[0]
-            return [eq1, eq2]
-
-        lb = (0, 0)  # lower bounds on x1, x2
-        ub = (1, 1)  # upper bounds
-
-        # Solve the problem by optimization with varying starting points so that all points are found
-        x0s = np.arange(0., 1.1, step=0.1)
-        for x0i in x0s:
-            for x0j in x0s:
-                res = least_squares(eqns, [x0i, x0j], bounds=(lb, ub))
-                x_res_1, x_res2 = res.x.round(decimals=4)
-                if res.cost < 1e-10 and (x_res_1, x_res2) not in pts:
-                    pts.append((x_res_1, x_res2))
-
-        return pts
-
-    def save_data_dict(self, path):
-        with open(path, 'w') as outfile:
-            json.dump(self.data_dict, outfile)
+        return poly_set
 
 
 class PolyGenerator(object):
@@ -141,9 +99,9 @@ class PolyGenerator(object):
     --------
     pg = PolyGenerator(2)
 
-    pg.add_constraint(np.array([0.5]), 0, 0)
-    pg.add_constraint(np.array([0.5]), 1, 0)
-    pg.add_constraint(np.array([0.2]), 0, 2)
+    pg.add_constraint(0.5, 0, 0)
+    pg.add_constraint(0.5, 1, 0)
+    pg.add_constraint(0.2, 0, 2)
 
     q = pg.get_values()
 
@@ -155,14 +113,14 @@ class PolyGenerator(object):
         self.d = d
 
         # Placeholder for constraint vandermonde matrix and and constraint vector
-        self.vc = np.empty(shape=(0, self.d + 1))
-        self.w = np.empty(shape=(0, ))
+        self.vc = torch.empty(size=(0, self.d + 1), requires_grad=True)
+        self.w = torch.empty(size=(0, ), requires_grad=True)
 
         # Placeholder for the coefficients
         self.c = None
 
         # x-range
-        self.x = np.arange(0, 101, step=step_size)/100
+        self.x = torch.arange(0., 101., step=step_size, requires_grad=True)/100
 
     def add_constraint(self, x, o, w):
         """
@@ -189,11 +147,11 @@ class PolyGenerator(object):
         """
 
         # Update the constraint vector
-        self.w = np.concatenate((self.w, np.array([w])), 0)
+        self.w = torch.concat((self.w, torch.tensor([w])), 0)
 
         # Update the constraint vandermonde matrix
-        v = vander_constraint(x, o, self.d)
-        self.vc = np.concatenate((self.vc, v), 0)
+        v = vander_constraint(torch.tensor([x]), o, self.d)
+        self.vc = torch.concat((self.vc, v), 0)
 
     def get_cfs(self):
         """
@@ -209,7 +167,7 @@ class PolyGenerator(object):
 
         Returns
         -------
-        np.array :
+        torch.tensor :
             polynomial coefficients
 
         """
@@ -218,6 +176,6 @@ class PolyGenerator(object):
         assert self.vc.shape[0] >= self.d + 1
 
         # Solve the equation system
-        self.c = np.flip(pinv(self.vc) @ self.w)
+        self.c = pinv(self.vc) @ self.w
 
         return self.c

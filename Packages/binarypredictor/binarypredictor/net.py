@@ -1,6 +1,7 @@
 import os
 import pkg_resources
 
+import numpy as np
 import torch
 import torch.nn as nn
 from torch.nn import Linear, ReLU, Softmax, LSTM, Sequential, BatchNorm1d, Tanh, Sigmoid
@@ -79,7 +80,7 @@ class DerivativeNet(nn.Module):
     derivative is the same for both.
     """
 
-    def __init__(self, train=False, in_features=200, out_features=5, hidden_size_linear=128, hidden_layers=1):
+    def __init__(self, train=False, in_features=200, out_features=10000, hidden_size_linear=128, hidden_layers=1):
         super(DerivativeNet, self).__init__()
 
         # File paths
@@ -96,19 +97,21 @@ class DerivativeNet(nn.Module):
             if not train and not os.path.exists(os.path.join(self.models_path, 'binary.pth')):
                 print('New network had to be initialized as no network exists yet. Training necessary!')
 
+            layers_size = [in_features] + hidden_layers * [hidden_size_linear] + [out_features]
+
             # Create the network
             self.fc = Sequential()
-            self.fc.add_module('in', Linear(self.in_features, self.hidden_size_linear))
+            self.fc.add_module('in', Linear(int(layers_size[0]), (int(layers_size[1]))))
             self.fc.add_module('a_in', ReLU())
-            for i in range(hidden_layers):
-                self.fc.add_module('h_' + str(i + 1), Linear(self.hidden_size_linear, self.hidden_size_linear))
+            for i in range(1, len(layers_size) - 2, 1):
+                self.fc.add_module('h_' + str(i + 1), Linear(int(layers_size[i]), int(layers_size[i + 1])))
                 self.fc.add_module('a_' + str(i + 1), ReLU())
-            self.fc.add_module('out', Linear(self.hidden_size_linear, self.out_features))
+            self.fc.add_module('out', Linear(int(layers_size[-2]), int(layers_size[-1])))
 
             def init_weights(m):
                 if isinstance(m, nn.Linear):
                     torch.nn.init.xavier_normal_(m.weight)
-                    m.bias.data.fill_(0.001)
+                    m.bias.data.fill_(0.01)
 
             self.fc.apply(init_weights)
         else:
