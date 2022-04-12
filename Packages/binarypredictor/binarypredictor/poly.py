@@ -511,6 +511,9 @@ class PolynomialBatch(object):
         # PolynomialSets that make up the batch
         self.batch = batch or []
 
+    def __getitem__(self, i):
+        return self.batch[i]
+
     def set_batch(self, batch):
         """
         Sets the batch
@@ -615,6 +618,9 @@ class PolynomialDataLoader(object):
             return result
         else:
             raise StopIteration
+
+    def __getitem__(self, i):
+        return self.batches[i]
 
     def create_batches(self):
         """
