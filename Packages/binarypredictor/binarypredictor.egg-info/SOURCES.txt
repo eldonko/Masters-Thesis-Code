@@ -5,7 +5,8 @@ setup.py
 binarypredictor/__init__.py
 binarypredictor/datagen.py
 binarypredictor/dataset.py
-binarypredictor/math.py
+binarypredictor/net.py
+binarypredictor/poly.py
 binarypredictor.egg-info/PKG-INFO
 binarypredictor.egg-info/SOURCES.txt
 binarypredictor.egg-info/dependency_links.txt
