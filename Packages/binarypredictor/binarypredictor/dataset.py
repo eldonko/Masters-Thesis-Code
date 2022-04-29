@@ -8,6 +8,9 @@ import pandas as pd
 import torch
 from torch.utils.data import Dataset
 
+from . import split_functions
+from .net import DerivativeNet
+
 
 class FunctionDataset(Dataset):
     def __init__(self, n_functions=0, filename=None, o=None, step=0.01, overwrite=False):
@@ -228,6 +231,7 @@ class FunctionPairDataset(FunctionDataset):
             df = pd.DataFrame(self._parameters)
             df.to_csv(self.filename)
 
+
     def generate_data(self):
         """
         Generates pairs of Gibbs energy functions based on "Statistische Konstitutionsanalyse - Thermodynamische
@@ -286,3 +290,99 @@ class FunctionPairDataset(FunctionDataset):
         self._parameters.append(ks)
 
         self._scale.append(global_max)
+
+
+class FunctionPairSplitDataset(FunctionDataset):
+    def __init__(self, n_functions=0, filename=None, step=0.01, overwrite=False):
+        super(FunctionPairSplitDataset, self).__init__(n_functions, filename, o=0, step=step, overwrite=overwrite)
+
+        self.n_functions = n_functions
+        self.filename = filename
+        self.step = step
+        self.overwrite = overwrite
+
+        self._samples = []  # Samples
+        self._parameters = []  # Function parameters
+        self._scale = []  # Scaling factors
+        self._split_idx = []  # Splitting indices
+
+    def __getitem__(self, i):
+        return self._samples[i], self._parameters[i], self._scale[i], self._split_idx[i]
+
+    def create_functions(self):
+        # Generate data
+        if not os.path.exists(self.filename) or self.overwrite:
+            for i in range(self.n_functions):
+                self.generate_data()
+
+            df = pd.DataFrame(self._parameters)
+            df.to_csv(self.filename)
+
+    def generate_data(self):
+        """
+        Generates pairs of Gibbs energy functions based on "Statistische Konstitutionsanalyse - Thermodynamische
+        Konstitutionsmorphologie[Mager, T.; Lukas, H.L.; Petzow, G.]
+
+        """
+
+        ks = []
+        funcs = []
+        ders = []
+        global_max = None
+
+        # Get two functions
+        k = dict()
+        k['o'] = 0
+
+        # Generate function parameters randomly
+        t_max = 3000
+        s_max = 10
+        k['T'] = np.random.rand() * t_max
+        k['tm1'] = np.random.rand() * t_max
+        k['tm2'] = np.random.rand() * t_max
+        k['tm'] = (k['tm1'] + k['tm2']) / 2
+
+        a_sum, a_diff = self.generate_a()
+        a_1, a_2 = self.a(a_sum, a_diff, k['tm'])
+
+        def get_function(a, s1_, s2_):
+            k_ = k.copy()
+            k_['a'] = a
+            k_['s1'] = s1_
+            k_['s2'] = s2_
+            ks.append(k_)
+
+            # Get function + derivative values
+            f, d = self.get_values(**k_)
+            funcs.append(f), ders.append(d)
+
+            # Get functions maximum
+            return max(abs(torch.max(f)), abs(torch.min(f)))
+
+        # Get the two functions and in the same go the global maximum
+        s1 = np.random.rand() * s_max
+        s2 = np.random.rand() * s_max
+        global_max = max(get_function(a_1, s1, s2), get_function(a_2, 0, 0))
+
+        # Scale the functions by the absolute maximum
+        for func, der in zip(funcs, ders):
+            func /= global_max
+            der /= global_max
+
+        # Split functions by turning points
+        net_0 = DerivativeNet(train=False, net='FirstDerivativeNet_250_s.pth')
+        net_1 = DerivativeNet(train=False, net='SecondDerivativeNet_250_s.pth')
+
+        values = torch.hstack((funcs[0].unsqueeze(-1), funcs[1].unsqueeze(-1)))
+        splits_f, splits_g = split_functions(net_0, net_1, values)
+
+        # Mix all splitted functions from f with all from g and add them to the samples
+        for i in range(len(splits_f)):
+            for j in range(len(splits_g)):
+                sample = torch.hstack((splits_f[i][0].unsqueeze(-1), splits_g[j][0].unsqueeze(-1)))
+
+                # Append the new values to the existing samples
+                self._samples.append(sample)
+                self._parameters.append(ks)
+                self._scale.append(global_max)
+                self._split_idx.append((splits_f[i][1], splits_g[j][1]))
