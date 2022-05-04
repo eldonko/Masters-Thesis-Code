@@ -73,11 +73,11 @@ class PlotHandler(object):
             entropy /= abs(entropy).max()
             enthalpy /= abs(enthalpy).max()
 
-        fig, axes = plt.subplots(4, sharex=True, figsize=(7, 28))
-        self.plot_property(temp, gibbs, gibbs_p, axes[0], 'Gibbs energy over temperature')
-        self.plot_property(temp, entropy, entropy_p, axes[1], 'Entropy over temperature')
-        self.plot_property(temp, enthalpy, enthalpy_p, axes[2], 'Enthalpy over temperature')
-        self.plot_property(temp, heat_cap, heat_cap_p, axes[3], 'Heat capacity over temperature')
+        fig, axes = plt.subplots(4, sharex=False, figsize=(7, 28))
+        self.plot_property(temp, gibbs, gibbs_p, axes[0], 'Gibbs energy [kJ/mol] over temperature in K')
+        self.plot_property(temp, entropy, entropy_p, axes[1], 'Entropy [J/(mol K)] over temperature in K')
+        self.plot_property(temp, enthalpy, enthalpy_p, axes[2], 'Enthalpy [kJ/mol] over temperature in K')
+        self.plot_property(temp, heat_cap, heat_cap_p, axes[3], 'Heat capacity [J/(mol K)] over temperature in K')
         plt.show()
 
     @staticmethod
@@ -169,9 +169,9 @@ class PlotHandler(object):
         predictions = predictions.detach()
         temp = dataset[:, [0]]
 
-        fig, axes = plt.subplots(4, sharex=True, figsize=(7, 28))
-        self.plot_property(temp, dataset[:, [1]], predictions[:, 0], axes[0], 'Gibbs energy over temperature')
-        self.plot_property(temp, dataset[:, [2]], predictions[:, 1], axes[1], 'Entropy over temperature')
-        self.plot_property(temp, dataset[:, [3]], predictions[:, 2], axes[2], 'Enthalpy over temperature')
-        self.plot_property(temp, dataset[:, [4]], predictions[:, 3], axes[3], 'Heat capacity over temperature')
+        fig, axes = plt.subplots(4, sharex=False, figsize=(7, 28))
+        self.plot_property(temp, dataset[:, [1]], predictions[:, 0], axes[0], 'Gibbs energy [kJ/mol] over temperature in K')
+        self.plot_property(temp, dataset[:, [2]], predictions[:, 1], axes[1], 'Entropy [J/(mol K)] over temperature in K')
+        self.plot_property(temp, dataset[:, [3]], predictions[:, 2], axes[2], 'Enthalpy [kJ/mol] over temperature in K')
+        self.plot_property(temp, dataset[:, [4]], predictions[:, 3], axes[3], 'Heat capacity [J/(mol K)] over temperature in K')
         plt.show()
